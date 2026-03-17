@@ -16,48 +16,64 @@ import CustomTable from "../../../../src/components/CustomTable/CustomTable";
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 const DashboardBarChart = () => {
-  const barData = {
-    labels: ["Feb", "March", "April", "May", "June", "July", "Aug", "Sept"],
-    datasets: [
-      {
-        label: "Monthly",
-        data: [70, 35, 50, 65, 20, 45, 30, 50],
-        backgroundColor: "#c168cf",
-        borderRadius: {
-          topLeft: 10,
-          topRight: 10,
-          bottomLeft: 0,
-          bottomRight: 0,
-        },
-        borderSkipped: false,
+  // const barData = {
+  //   labels: ["Feb", "March", "April", "May", "June", "July", "Aug", "Sept"],
+  //   datasets: [
+  //     {
+  //       label: "Monthly",
+  //       data: [70, 35, 50, 65, 20, 45, 30, 50],
+  //       backgroundColor: "#c168cf",
+  //       borderRadius: {
+  //         topLeft: 10,
+  //         topRight: 10,
+  //         bottomLeft: 0,
+  //         bottomRight: 0,
+  //       },
+  //       borderSkipped: false,
+  //     },
+  //     {
+  //       label: "Quarterly",
+  //       data: [55, 100, 80, 90, 70, 30, 25, 20],
+  //       backgroundColor: "#548bcf",
+  //       borderRadius: {
+  //         topLeft: 10,
+  //         topRight: 10,
+  //         bottomLeft: 0,
+  //         bottomRight: 0,
+  //       },
+  //       borderSkipped: false,
+  //     },
+  //     {
+  //       label: "Annual",
+  //       data: [85, 50, 40, 65, 25, 25, 50, 50],
+  //       backgroundColor: "#2bb1a0",
+  //       borderRadius: {
+  //         topLeft: 10,
+  //         topRight: 10,
+  //         bottomLeft: 0,
+  //         bottomRight: 0,
+  //       },
+  //       borderSkipped: false,
+  //     },
+  //   ],
+  // };
+const barData = {
+  labels: ["Feb", "March", "April", "May", "June", "July", "Aug", "Sept"],
+  datasets: [
+    {
+      label: "Monthly",
+      data: [70, 35, 50, 65, 20, 45, 30, 50],
+      backgroundColor: "#c168cf",
+      borderRadius: {
+        topLeft: 10,
+        topRight: 10,
+        bottomLeft: 0,
+        bottomRight: 0,
       },
-      {
-        label: "Quarterly",
-        data: [55, 100, 80, 90, 70, 30, 25, 20],
-        backgroundColor: "#548bcf",
-        borderRadius: {
-          topLeft: 10,
-          topRight: 10,
-          bottomLeft: 0,
-          bottomRight: 0,
-        },
-        borderSkipped: false,
-      },
-      {
-        label: "Annual",
-        data: [85, 50, 40, 65, 25, 25, 50, 50],
-        backgroundColor: "#2bb1a0",
-        borderRadius: {
-          topLeft: 10,
-          topRight: 10,
-          bottomLeft: 0,
-          bottomRight: 0,
-        },
-        borderSkipped: false,
-      },
-    ],
-  };
-
+      borderSkipped: false,
+    },
+  ],
+};
  const barOptions = {
   plugins: {
     legend: {
@@ -113,7 +129,7 @@ const DashboardBarChart = () => {
 
 
   const data = [
-    { monthly: "32", quarterly: "20", annual: "41", monthlyrevs: "130", momrevs: "90%", growth: "up (+44%)", kpis: "Subs" },
+    { monthly: "32", quarterly: "20", annual: "41", monthlyrevs: "130", momrevs: "90%", growth: "up (+44%)"},
   ];
 
   const columns = [
@@ -123,18 +139,18 @@ const DashboardBarChart = () => {
     { key: "monthlyrevs", label: "Monthly Revs" },
     { key: "momrevs", label: "MoM Revs" },
     { key: "growth", label: "Growth %", },
-    { key: "kpis", label: "KPIs", },
+    // { key: "kpis", label: "KPIs", },
   ];
 
 
   return (
     <div className="dashboard-container">
-      <div className="tabs">
+      {/* <div className="tabs">
         <span>Weekly</span>
         <span className="active-tab">Monthly</span>
         <span>Yearly</span>
         <span>All Time</span>
-      </div>
+      </div> */}
 
       <h2 className="heading">
         Data for <span className="highlight">April</span>

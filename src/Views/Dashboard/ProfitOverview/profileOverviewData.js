@@ -52,9 +52,9 @@ export const ageOptions = {
 
 
 export const pieChartData = [
-  { label: 'Monthly', value: 52, color: '#e879f9' },
-  { label: 'Quartly', value: 27, color: '#2dd4bf' },
-  { label: 'Annual', value: 21, color: '#3b82f6' },
+  { label: 'Gross Revenue ($)', value: 100, color: '#e879f9' },
+  { label: 'Expenses ($)', value: 200, color: '#2dd4bf' },
+  { label: 'DL Fees ($)', value: 300, color: '#3b82f6' },
 ];
 
 export const profitData = {

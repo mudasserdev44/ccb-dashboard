@@ -159,8 +159,8 @@ const index = () => {
               Financial Snapshot
             </Typography>
             <div className="tabs w-full sm:w-auto">
-              <span>Weekly</span>
-              <span className="active-tab">Monthly</span>
+              <span>Monthly</span>
+              <span className="active-tab">Quarterly</span>
               <span>Yearly</span>
               <span>All Time</span>
             </div>

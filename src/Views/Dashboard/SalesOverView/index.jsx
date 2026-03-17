@@ -127,8 +127,8 @@ const SalesOverview = () => {
               </Box>
               <Box
                 sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, fontFamily: 'Montserrat, sans-serif', alignItems: "center", justifyContent: "center", gap: "10px", flexWrap: { xs: "wrap", md: "nowrap" } }} >
-                <CircularProgressWithLabel profitheading="P" saleheading="S" date="WoW" color="#2DD4BF" sale="+13%" profit="+33%" percentage={33} />
-                <CircularProgressWithLabel profitheading="P" saleheading="S" date="MoM" color="#E879F9" sale="+44%" profit="+52%" percentage={65} />
+                <CircularProgressWithLabel profitheading="P" saleheading="S" date="MoM" color="#2DD4BF" sale="+13%" profit="+33%" percentage={33} />
+                <CircularProgressWithLabel profitheading="P" saleheading="S" date="QoQ" color="#E879F9" sale="+44%" profit="+52%" percentage={65} />
                 <CircularProgressWithLabel profitheading="P" saleheading="S" date="YoY" color="#60A5FA" sale="+53%" profit="+73%" percentage={44} />
               </Box>
             </DashboardCard>

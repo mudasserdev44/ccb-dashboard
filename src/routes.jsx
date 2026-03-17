@@ -19,7 +19,8 @@ import NotFound from "./components/NotFound";
 import EditFutureOpportunity from "./Views/Dashboard/FutureOpportunities/EditFutureOpportunity";
 
 export default function Router() {
-  const isAuthenticated = useSelector((state) => state.admin.isAuthenticated)
+  // const isAuthenticated = useSelector((state) => state.admin.isAuthenticated)
+  const isAuthenticated = true
   let element = useRoutes([
     {
       path: "/",
@@ -29,26 +30,43 @@ export default function Router() {
       element: <ProtectedRoutes isLogged={isAuthenticated} />,
       children: [
         {
-          path: "/dashboard",
-          element: <DashboardLayout />,
-          children: [
-            // { index: true, element: <SalesOverview /> },
-            { path: "sales-overview", element: <SalesOverview /> },
-            { path: "profit-overview", element: <ProfitOverview /> },
-            { path: "hot-spots", element: <Hotspots /> },
-            { path: "ambassador-overview", element: <Ambassadoroverview /> },
-            { path: "sharing-overview", element: <SharingOverview /> },
-            { path: "add-futureopportunities", element: <FutureOpportunities /> },
-            { path: "edit-futureopportunities/:id", element: <EditFutureOpportunity /> },
-            { path: "future-opportunities", element: <FutureOpportunitiesPage /> },
-            { path: "admin-coupons", element: <AdminCoupons /> },
-            { path: "help-support", element: <HelpSupport /> },
-            { path: "notification-setting", element: <NotificationSettings /> },
-            { path: "admin-settings", element: <AdminSettings /> },
-            { path: "profile", element: <Profile /> },
+  path: "/dashboard",
+  element: <DashboardLayout />,
+  children: [
 
-          ],
-        },
+    {
+      element: <ProtectedRoutes allowedRoles={["admin"]} />,
+      children: [
+        { path: "sales-overview", element: <SalesOverview /> },
+        { path: "profit-overview", element: <ProfitOverview /> },
+      ],
+    },
+
+    {
+      element: <ProtectedRoutes allowedRoles={["admin","manager"]} />,
+      children: [
+        { path: "hot-spots", element: <Hotspots /> },
+        { path: "ambassador-overview", element: <Ambassadoroverview /> },
+        { path: "sharing-overview", element: <SharingOverview /> },
+        { path: "add-futureopportunities", element: <FutureOpportunities /> },
+        { path: "edit-futureopportunities/:id", element: <EditFutureOpportunity /> },
+        { path: "future-opportunities", element: <FutureOpportunitiesPage /> },
+        { path: "admin-coupons", element: <AdminCoupons /> },
+        { path: "notification-setting", element: <NotificationSettings /> },
+        { path: "admin-settings", element: <AdminSettings /> },
+        { path: "profile", element: <Profile /> },
+      ],
+    },
+
+    {
+      element: <ProtectedRoutes allowedRoles={["admin","manager","developer"]} />,
+      children: [
+        { path: "help-support", element: <HelpSupport /> },
+      ],
+    },
+
+  ]
+}
       ]
     },
     {
