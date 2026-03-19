@@ -306,12 +306,12 @@ const index = () => {
 
             <div className='lg:col-span-5 mt-4 lg:mt-0 h-full '>
                 <Box display="flex" justifyContent={{ xs: "center", sm: "end" }} alignItems="center" mt={2}>
-                  <div className="tabs">
+                  {/* <div className="tabs">
                     <span>Weekly</span>
                     <span className="active-tab">Monthly</span>
                     <span>Yearly</span>
                     <span>All Time</span>
-                  </div>
+                  </div> */}
                 </Box>
               <DashboardCard sx={{ padding: "10px", height: { xs: "full", md: "500px", }, fontFamily: 'Montserrat, sans-serif', }}>
                 <TotalExpenses />

@@ -34,6 +34,10 @@ const LoginScreen = () => {
         })
       }
       catch (err) {
+        ToastComp({
+          variant:'info',
+          message:err.response.data.message
+        })
         console.log(err)
         setIsLoading(false);
       }

@@ -118,12 +118,12 @@ const SalesOverview = () => {
             </Typography>
             <DashboardCard sx={{ padding: "10px" }}>
               <Box display="flex" justifyContent={{ xs: "center", sm: "end" }} alignItems="center" mb={3} >
-                <div className="tabs">
+                {/* <div className="tabs">
                   <span>Weekly</span>
                   <span className="active-tab">Monthly</span>
                   <span>Yearly</span>
                   <span>All Time</span>
-                </div>
+                </div> */}
               </Box>
               <Box
                 sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, fontFamily: 'Montserrat, sans-serif', alignItems: "center", justifyContent: "center", gap: "10px", flexWrap: { xs: "wrap", md: "nowrap" } }} >

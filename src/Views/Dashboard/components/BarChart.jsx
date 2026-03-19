@@ -129,7 +129,7 @@ const barData = {
 
 
   const data = [
-    { monthly: "32", quarterly: "20", annual: "41", monthlyrevs: "130", momrevs: "90%", growth: "up (+44%)"},
+    { monthly: "32", quarterly: "20", annual: "41", monthlyrevs: "$  130", momrevs: "90%", growth: "up (+44%)"},
   ];
 
   const columns = [

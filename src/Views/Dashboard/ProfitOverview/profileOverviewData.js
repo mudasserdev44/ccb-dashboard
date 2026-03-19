@@ -3,9 +3,9 @@
 export const ageData = {
   labels: ["Jan", "Feb", "Mar", "Apr", "May", "June"],
   datasets: [
-    { label: "Monthly", data: [70, 35, 50, 65, 20, 45], backgroundColor: "#c168cf", borderRadius: 10 },
-    { label: "Quarterly", data: [55, 100, 80, 90, 70, 30], backgroundColor: "#548bcf", borderRadius: 10 },
-    { label: "Annual", data: [85, 50, 40, 65, 25, 25], backgroundColor: "#2bb1a0", borderRadius: 10 },
+    { label: "Android", data: [70, 35, 50, 65, 20, 45], backgroundColor: "#c168cf", borderRadius: 10 },
+    { label: "IoS", data: [55, 100, 80, 90, 70, 30], backgroundColor: "#548bcf", borderRadius: 10 },
+    // { label: "Annual", data: [85, 50, 40, 65, 25, 25], backgroundColor: "#2bb1a0", borderRadius: 10 },
   ],
 };
 
@@ -234,13 +234,12 @@ export const lineChartOptions = {
 
 
 
-
-
 export const Doughnutdata = {
-   labels: ['Marketing', 'Apple Dev Fee', 'Google Dev Fee', 'Ambassador Payouts'],
+
+   labels: ['Marketing', 'Apple Dev Fee', 'Google Dev Fee', 'Ambassador Payouts', 'Server and Tools', 'Miscellaneous'],
   datasets: [{
-    data: [882, 859, 183, 512],
-    backgroundColor: ['#e879f9', '#fde047', '#c084fc', '#60a5fa'],
+    data: [1000, 1200, 100, 400, 500, 150],
+    backgroundColor: ['#E91E63', '#FFEB3B', '#2196F3', '#4CAF50', '#5710e5', '#f112d3'],
     borderColor: '#111111',
     borderWidth: 1,
   }],
