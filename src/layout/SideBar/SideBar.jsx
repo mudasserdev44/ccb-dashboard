@@ -13,10 +13,12 @@ import React, { useState } from "react";
 import SideBarItem from "./SideBarItem";
 import { ChevronRight, LogOut, Settings } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const SideBar = ({ setCollapsed, collapsed, sidebarItems }) => {
     const navigate = useNavigate();
-  const location = useLocation();
+    const location = useLocation();
+    const role = useSelector((state) => state.admin.user.role);
 
   const isAdminSettingsActive =
     location.pathname === "/dashboard/admin-settings";
@@ -194,50 +196,54 @@ const SideBar = ({ setCollapsed, collapsed, sidebarItems }) => {
             <List>
               {!collapsed ? (
                 <>
-                <Tooltip title="Settings" placement="right">
-                <ListItem
-                  onClick={() => navigate("/dashboard/admin-settings")}
-                  sx={{
-                    borderRadius: "8px",
-                    mb: 1,
-                    p: 1.5,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                    backgroundColor: isAdminSettingsActive
-                      ? "rgba(21, 128, 61, 0.15)"
-                      : "transparent",
-                    "&:hover": {
+                    {
+                      role === "admin" &&
+                      <>
+                  <Tooltip title="Settings" placement="right">
+                  <ListItem
+                    onClick={() => navigate("/dashboard/admin-settings")}
+                    sx={{
+                      borderRadius: "8px",
+                      mb: 1,
+                      p: 1.5,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
                       backgroundColor: isAdminSettingsActive
-                        ? "rgba(21, 128, 61, 0.2)"
-                        : "rgba(255, 255, 255, 0.08)",
-                    },
-                    cursor: "pointer",
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: "auto",
-                      color: isAdminSettingsActive
-                        ? "#15803d"
-                        : "rgba(255, 255, 255, 0.7)",
+                        ? "rgba(21, 128, 61, 0.15)"
+                        : "transparent",
+                      "&:hover": {
+                        backgroundColor: isAdminSettingsActive
+                          ? "rgba(21, 128, 61, 0.2)"
+                          : "rgba(255, 255, 255, 0.08)",
+                      },
+                      cursor: "pointer",
                     }}
                   >
-                    <Settings size={20} />
-                  </ListItemIcon>
-
-                  <Typography
-                    sx={{
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Admin Settings
-                  </Typography>
-                </ListItem>
-              </Tooltip>
+                    <ListItemIcon
+                      sx={{
+                        minWidth: "auto",
+                        color: isAdminSettingsActive
+                          ? "#15803d"
+                          : "rgba(255, 255, 255, 0.7)",
+                      }}
+                    >
+                      <Settings size={20} />
+                    </ListItemIcon>
+                      <Typography
+                      sx={{
+                        color: "#ffffff",
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        whiteSpace: "nowrap",
+                      }}
+                      >
+                        Admin Settings
+                      </Typography>
+                      </ListItem>
+                    </Tooltip>
+                      </>
+                  }
 
 
 
