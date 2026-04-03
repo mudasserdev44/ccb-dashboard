@@ -109,13 +109,13 @@ const Hotspots = () => {
                 className={timeFilter === "weekly" ? "active-tab cursor-pointer" : "cursor-pointer"}
                 onClick={() => setTimeFilter("weekly")}
               >
-                Weekly
+                Monthly
               </span>
               <span 
                 className={timeFilter === "monthly" ? "active-tab cursor-pointer" : "cursor-pointer"}
                 onClick={() => setTimeFilter("monthly")}
               >
-                Monthly
+                Quarterly
               </span>
               <span 
                 className={timeFilter === "yearly" ? "active-tab cursor-pointer" : "cursor-pointer"}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Grid, Typography } from "@mui/material";
 import {
   DashboardCard,
@@ -34,7 +34,24 @@ const SalesOverview = () => {
   const [dataTimeFilter, setDataTimeFilter] = useState("Monthly");
   const [salesTimeFilter, setSalesTimeFilter] = useState("Monthly");
   const [selectedCountry, setSelectedCountry] = useState("usa");
+  const [all_data, SetAllData]=useState([])
+  const getSalesOverviewData = async()=> {
+    try{
+      const res = await request({
+        method:"get",
+        url:"/dashboard/salesOverview?range=yearly",
 
+      }, false, token)
+      SetAllData(res.data.data)
+      console.log(all_data, "aLLLLLLL")
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+  useEffect(()=>{
+    getSalesOverviewData()
+  }, [])
   // Fetcher function for SWR
   const fetcher = async (url) => {
     const res = await request({
@@ -96,14 +113,14 @@ const SalesOverview = () => {
             <div className="flex flex-col bg-[#262626] gap-4">
               <CustomCardRevenue
                 title={"Total revenue"}
-                totalRevenue={100}
+                totalRevenue={all_data?.summary?.totalRevenue}
                 showCurrency={true}
-                previousRevenue={50}
+                previousRevenue={all_data?.summary?.previousRevenue}
                 percentageChange={100}
               />
               <CustomCardRevenue
                 title={"New subscribers"}
-                totalRevenue={100}
+                totalRevenue={all_data?.summary?.newSubscribers}
                 previousRevenue={50}
                 percentageChange={100}
               />
@@ -126,10 +143,10 @@ const SalesOverview = () => {
                 </div> */}
               </Box>
               <Box
-                sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, fontFamily: 'Montserrat, sans-serif', alignItems: "center", justifyContent: "center", gap: "10px", flexWrap: { xs: "wrap", md: "nowrap" } }} >
-                <CircularProgressWithLabel profitheading="P" saleheading="S" date="MoM" color="#2DD4BF" sale="+13%" profit="+33%" percentage={33} />
-                <CircularProgressWithLabel profitheading="P" saleheading="S" date="QoQ" color="#E879F9" sale="+44%" profit="+52%" percentage={65} />
-                <CircularProgressWithLabel profitheading="P" saleheading="S" date="YoY" color="#60A5FA" sale="+53%" profit="+73%" percentage={44} />
+                sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, fontFamily: 'Montserrat, sans-serif', alignItems: "center", justifyContent: "center", gap: "20px", mt:'15%', flexWrap: { xs: "wrap", md: "nowrap" } }} >
+                <CircularProgressWithLabel profitheading="P" saleheading="S" date="MoM" color="#2DD4BF" sale={`+${all_data?.salesProfit?.mom?.sales || 0}%`} profit={`+${all_data?.salesProfit?.mom?.profit || 0}%`} percentage={33} />
+                <CircularProgressWithLabel profitheading="P" saleheading="S" date="QoQ" color="#E879F9" sale={`+${all_data?.salesProfit?.qoq?.sales || 0}%`} profit={`+${all_data?.salesProfit?.qoq?.profit || 0}%`} percentage={65} />
+                <CircularProgressWithLabel profitheading="P" saleheading="S" date="YoY" color="#60A5FA" sale={`+${all_data?.salesProfit?.yoy?.sales || 0}%`} profit={`+${all_data?.salesProfit?.yoy?.profit || 0}%`} percentage={44} />
               </Box>
             </DashboardCard>
           </Grid>

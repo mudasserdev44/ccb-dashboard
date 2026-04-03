@@ -21,7 +21,6 @@ import CustomFeeSummaryCard from '../../../components/CustomCardRevenue/CustomFe
 import {
   ageData,
   ageOptions,
-  pieChartData,
   profitData,
   profitOptions,
   downloadSourceData,
@@ -30,6 +29,8 @@ import {
   Doughnutdata,
   Doughnutoptions
 } from '../ProfitOverview/profileOverviewData';
+import { request } from '../../../services/axios'
+import { useSelector } from 'react-redux'
 
 ChartJS.register(
   CategoryScale,
@@ -56,6 +57,8 @@ const createGradient = (ctx, chartArea) => {
 };
 
 const index = () => {
+  const token = useSelector((state) => state.admin.token);
+  const [all_data, SetAllData] = useState({})
   const chartRef = useRef(null);
   const [chartData, setChartData] = useState(lineChartInitialData);
   const [chartOptions, setChartOptions] = useState(lineChartOptions);
@@ -78,20 +81,20 @@ const index = () => {
   const revenueCardsData = [
     {
       title: "Gross Revenue",
-      totalRevenue: 100,
+      totalRevenue: Number(all_data?.summary?.grossRevenue) || 0,
       previousRevenue: 50,
       percentageChange: 100,
     },
     {
       title: "Expenses",
-      totalRevenue: 200,
+      totalRevenue: Number(all_data?.summary?.expenses) || 0,
       previousRevenue: 100,
       percentageChange: 100,
     },
     {
       title: "DL Fees",
       description: "(App Store + Play Store)",
-      totalRevenue: 300,
+      totalRevenue: Number(all_data?.summary?.dlFees) || 0,
       previousRevenue: 50,
       percentageChange: -100,
     },
@@ -146,7 +149,27 @@ const index = () => {
     { label: 'Ambassador Payouts', color: '#FDE047' },
   ];
 
-
+  const getProfitOverviewData = async() =>{
+    try{
+      const res = await request({
+        method:"get",
+        url:"/dashboard/profitOverview?range=yearly"
+      }, false, token)
+      SetAllData(res?.data)
+      console.log(res.data, "RESSSSSSS")
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+  useEffect(()=>{
+    getProfitOverviewData()
+  }, [])
+  const pieChartData = [
+  { label: 'Gross Revenue ($)', value: Number(all_data?.summary?.grossRevenue) || 0, color: '#e879f9' },
+  { label: 'Expenses ($)', value: Number(all_data?.summary?.expenses) || 0, color: '#2dd4bf' },
+  { label: 'DL Fees ($)', value: Number(all_data?.summary?.dlFees) || 0, color: '#3b82f6' },
+];
   return (
     <>
       <div className='grid grid-cols-12 gap-2 text-white'>
@@ -198,7 +221,7 @@ const index = () => {
                 classname="rounded-xl h-full md:h-[250px]"
                 title="Net Profit"
                 description={"(Gross - Expenses - Fees)"}
-                totalRevenue={100}
+                totalRevenue={all_data?.netProfit}
                 showCurrency={true}
 
                 previousRevenue={50}
@@ -210,7 +233,7 @@ const index = () => {
               <CustomCardRevenue
                 classname="rounded-xl h-full md:h-[250px]"
                 title="MoM Profit %"
-                totalRevenue={100}
+                totalRevenue={all_data?.momProfit?.current}
                 previousRevenue={50}
                 percentageChange={100}
               />
