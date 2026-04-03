@@ -182,10 +182,10 @@ const index = () => {
               Financial Snapshot
             </Typography>
             <div className="tabs w-full sm:w-auto">
-              <span>Monthly</span>
-              <span className="active-tab">Quarterly</span>
+              <span >Monthly</span>
+              <span >Quarterly</span>
               <span>Yearly</span>
-              <span>All Time</span>
+              <span className="active-tab">All Time</span>
             </div>
           </Box>
 
