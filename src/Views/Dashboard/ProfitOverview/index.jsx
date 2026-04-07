@@ -32,6 +32,8 @@ import {
 import { request } from '../../../services/axios'
 import { useSelector } from 'react-redux'
 
+import { AgeSegmentsSkeleton, BarChartSkeleton, PieChartSkeleton, RevenueCardsSkeleton, RevenueChartSkeleton } from '../../../components/Skeleton/SkeletonComp'
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -59,6 +61,7 @@ const createGradient = (ctx, chartArea) => {
 const index = () => {
   const token = useSelector((state) => state.admin.token);
   const [all_data, SetAllData] = useState({})
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const chartRef = useRef(null);
   const [chartData, setChartData] = useState(lineChartInitialData);
   const [chartOptions, setChartOptions] = useState(lineChartOptions);
@@ -151,6 +154,7 @@ const index = () => {
 
   const getProfitOverviewData = async() =>{
     try{
+      setIsDataLoading(true);
       const res = await request({
         method:"get",
         url:"/dashboard/profitOverview?range=yearly"
@@ -160,6 +164,8 @@ const index = () => {
     }
     catch(err){
       console.log(err)
+    } finally {
+      setIsDataLoading(false);
     }
   }
   useEffect(()=>{
@@ -191,63 +197,73 @@ const index = () => {
 
           {/* Cards Grid - responsive columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 mt-4" style={{ marginTop: "10px" }}>
-            {revenueCardsData.map((item, index) => (
-              <div key={index} className="sm:col-span-6 lg:col-span-4">
-                <CustomCardRevenue
-                  classname="rounded-xl h-full md:h-62"
-                  title={item.title}
-                  description={item.description}
-                  totalRevenue={item.totalRevenue}
-                  showCurrency={true}
-                  previousRevenue={item.previousRevenue}
-                  percentageChange={item.percentageChange}
-                />
-              </div>
-            ))}
+            {isDataLoading ? (
+              <Grid item xs={12} sx={{ display: 'flex', gap: 2, width: '100%', overflow: 'hidden' }} className="lg:col-span-12">
+                <Box sx={{ width: '33%' }}><RevenueCardsSkeleton /></Box>
+                <Box sx={{ width: '33%' }}><RevenueCardsSkeleton /></Box>
+                <Box sx={{ width: '33%' }}><RevenueCardsSkeleton /></Box>
+              </Grid>
+            ) : (
+              revenueCardsData.map((item, index) => (
+                <div key={index} className="sm:col-span-6 lg:col-span-4">
+                  <CustomCardRevenue
+                    classname="rounded-xl h-full md:h-62"
+                    title={item.title}
+                    description={item.description}
+                    totalRevenue={item.totalRevenue}
+                    showCurrency={true}
+                    previousRevenue={item.previousRevenue}
+                    percentageChange={item.percentageChange}
+                  />
+                </div>
+              ))
+            )}
 
             <div className="sm:col-span-6 lg:col-span-4" >
               <div className="rounded-xl h-full md:h-[250px]" >
-                <DashboardCard sx={{ paddingY: "10px" }}>
-                  <PieChartBase
-                    chartHeight={200} chartWidth={200} legendRightSpace={100} showInternalLabels={true}
-                    data={pieChartData}
-                  />
-                </DashboardCard>
+                {isDataLoading ? (
+                  <PieChartSkeleton />
+                ) : (
+                  <DashboardCard sx={{ paddingY: "10px" }}>
+                    <PieChartBase
+                      chartHeight={200} chartWidth={200} legendRightSpace={100} showInternalLabels={true}
+                      data={pieChartData}
+                    />
+                  </DashboardCard>
+                )}
               </div>
             </div>
 
             <div className="sm:col-span-6 lg:col-span-4" >
-              <CustomCardRevenue
-                classname="rounded-xl h-full md:h-[250px]"
-                title="Net Profit"
-                description={"(Gross - Expenses - Fees)"}
-                totalRevenue={all_data?.netProfit}
-                showCurrency={true}
+              {isDataLoading ? (
+                <RevenueCardsSkeleton />
+              ) : (
+                <CustomCardRevenue
+                  classname="rounded-xl h-full md:h-[250px]"
+                  title="Net Profit"
+                  description={"(Gross - Expenses - Fees)"}
+                  totalRevenue={all_data?.netProfit}
+                  showCurrency={true}
 
-                previousRevenue={50}
-                percentageChange={100}
-              />
+                  previousRevenue={50}
+                  percentageChange={100}
+                />
+              )}
             </div>
 
             <div className="sm:col-span-6 lg:col-span-4" >
-              <CustomCardRevenue
-                classname="rounded-xl h-full md:h-[250px]"
-                title="MoM Profit %"
-                totalRevenue={all_data?.momProfit?.current}
-                previousRevenue={50}
-                percentageChange={100}
-              />
+              {isDataLoading ? (
+                <RevenueCardsSkeleton />
+              ) : (
+                <CustomCardRevenue
+                  classname="rounded-xl h-full md:h-[250px]"
+                  title="MoM Profit %"
+                  totalRevenue={all_data?.momProfit?.current}
+                  previousRevenue={50}
+                  percentageChange={100}
+                />
+              )}
             </div>
-
-            {/* <div className="sm:col-span-6 lg:col-span-8" style={{marginTop:"40px"}}>
-    <CustomFeeSummaryCard
-      ambassadorFee={100}
-      playstoreFee={22}
-      profit={382}
-      previousProfit={50}
-      profitChangePercentage={100}
-    />
-  </div> */}
           </div>
 
           <div className='grid grid-cols-1 lg:grid-cols-12 gap-4' style={{ paddingY: "16px", fontFamily: 'Montserrat, sans-serif' }}>
@@ -255,7 +271,11 @@ const index = () => {
               <h2 className="text-[25px] text-[#FFFF00] font-semibold mb-4 px-2.5" style={{ padding: "10px" }}>Gross vs Net Margin Over Time</h2>
               <div className="bg-[#171717] rounded-lg shadow-lg p-6">
                 <div className="h-[300px] w-full">
-                  <Bar data={profitData} options={profitOptions} />
+                  {isDataLoading ? (
+                    <RevenueChartSkeleton />
+                  ) : (
+                    <Bar data={(all_data?.profitData?.labels?.length > 0 && all_data?.profitData?.datasets?.length > 0) ? all_data.profitData : profitData} options={profitOptions} />
+                  )}
                 </div>
               </div>
             </div>
@@ -264,9 +284,13 @@ const index = () => {
               <Typography sx={{ color: "#FFFF00", fontWeight: "bold", paddingY: "10px", fontSize: "25px", fontFamily: 'Montserrat, sans-serif' }}>
                 Revenue per source
               </Typography>
-              <DashboardCard sx={{ padding: "10px", height: { xs: "250px", md: "350px", }, fontFamily: 'Montserrat, sans-serif', mt: 1 }}>
-                <Bar data={ageData} options={ageOptions} style={{ height: "100%", paddingTop: "20px" }} />
-              </DashboardCard>
+              {isDataLoading ? (
+                <BarChartSkeleton />
+              ) : (
+                <DashboardCard sx={{ padding: "10px", height: { xs: "250px", md: "350px", }, fontFamily: 'Montserrat, sans-serif', mt: 1 }}>
+                  <Bar data={(all_data?.ageData?.labels?.length > 0 && all_data?.ageData?.datasets?.length > 0) ? all_data.ageData : ageData} options={ageOptions} style={{ height: "100%", paddingTop: "20px" }} />
+                </DashboardCard>
+              )}
             </div>
           </div>
 
@@ -284,61 +308,63 @@ const index = () => {
                 Expense Breakdown
               </Typography>
 
-              <div className="flex flex-col lg:flex-row justify-center items-center bg-[#171717] rounded-xl text-white" style={{ height: "400px",marginTop:"10px" }}>
-                <div className="relative w-full h-full " style={{ padding: "16px" }}>
-                  <Doughnut
-                    data={Doughnutdata}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      cutout: "80%",
-                      layout: {
-                        padding: {
-                          top: 20,
-                          bottom: 40,
+              {isDataLoading ? (
+                <PieChartSkeleton />
+              ) : (
+                <div className="flex flex-col lg:flex-row justify-center items-center bg-[#171717] rounded-xl text-white" style={{ height: "400px", marginTop: "10px" }}>
+                  <div className="relative w-full h-full " style={{ padding: "16px" }}>
+                    <Doughnut
+                      data={(all_data?.expenseBreakdown?.labels?.length > 0 && all_data?.expenseBreakdown?.datasets?.length > 0) ? all_data.expenseBreakdown : Doughnutdata}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: "80%",
+                        layout: {
+                          padding: {
+                            top: 20,
+                            bottom: 40,
+                          },
                         },
-                      },
-                      plugins: {
-                        legend: {
-                          display: false,
+                        plugins: {
+                          legend: {
+                            display: false,
+                          },
                         },
-                      },
-                    }}
-                    plugins={[outsideLabelsPlugin]}
-                  />
+                      }}
+                      plugins={[outsideLabelsPlugin]}
+                    />
 
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                    <p className="text-xl text-gray-400">Total</p>
-                    <p className="text-xl lg:text-4xl font-bold">{total}</p>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                      <p className="text-xl text-gray-400">Total</p>
+                      <p className="text-xl lg:text-4xl font-bold">{(all_data?.expenseBreakdown?.datasets?.[0]?.data?.length > 0) ? all_data?.expenseBreakdown?.datasets?.[0]?.data?.reduce((sum, value) => sum + value, 0) : total}</p>
+                    </div>
                   </div>
+                  <ul className="list-none space-y-2 text-white lg:p-4 w-full lg:w-1/3 flex flex-wrap justify-center lg:block">
+                    {legendData.map((item, index) => (
+                      <li key={index} className="flex items-center space-x-2">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: item.color }}
+                        ></div>
+                        <span className="text-[12px]">{item.label}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="list-none space-y-2 text-white lg:p-4 w-full lg:w-1/3 flex flex-wrap justify-center lg:block">
-                  {legendData.map((item, index) => (
-                    <li key={index} className="flex items-center space-x-2">
-                      <div
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      ></div>
-                      <span className="text-[12px]">{item.label}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              )}
             </div>
 
 
             <div className='lg:col-span-5 mt-4 lg:mt-0 h-full '>
-                <Box display="flex" justifyContent={{ xs: "center", sm: "end" }} alignItems="center" mt={2}>
-                  {/* <div className="tabs">
-                    <span>Weekly</span>
-                    <span className="active-tab">Monthly</span>
-                    <span>Yearly</span>
-                    <span>All Time</span>
-                  </div> */}
-                </Box>
-              <DashboardCard sx={{ padding: "10px", height: { xs: "full", md: "500px", }, fontFamily: 'Montserrat, sans-serif', }}>
-                <TotalExpenses />
-              </DashboardCard>
+              <Box display="flex" justifyContent={{ xs: "center", sm: "end" }} alignItems="center" mt={2}>
+              </Box>
+              {isDataLoading ? (
+                <AgeSegmentsSkeleton />
+              ) : (
+                <DashboardCard sx={{ padding: "10px", height: { xs: "full", md: "500px", }, fontFamily: 'Montserrat, sans-serif', }}>
+                  <TotalExpenses initialExpenses={all_data?.expensesList} />
+                </DashboardCard>
+              )}
             </div>
           </div>
 

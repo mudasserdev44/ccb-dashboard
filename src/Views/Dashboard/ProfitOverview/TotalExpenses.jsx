@@ -103,7 +103,7 @@ function DatePicker({ value, onChange }) {
   );
 }
 
-const TotalExpenses = () => {
+const TotalExpenses = ({ initialExpenses }) => {
   const [selectedDate, setSelectedDate] = useState(new Date(2025, 4, 2));
   const [field, setField] = useState('');
   const [expense, setExpense] = useState('$');
@@ -116,6 +116,12 @@ const TotalExpenses = () => {
     { label: 'Server and Tools', amount: '$500', percentage: '57.3%', color: '#5710e5' },
     { label: 'Miscellaneous', amount: '$150', percentage: '57.3%', color: '#f112d3' },
   ]);
+
+  useEffect(() => {
+    if (initialExpenses && initialExpenses.length > 0) {
+      setExpensesList(initialExpenses);
+    }
+  }, [initialExpenses]);
 
   const handleAddEntry = () => {
     if (field && expense && expense !== '$') {
