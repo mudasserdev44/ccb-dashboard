@@ -109,8 +109,8 @@ export const ageSegmentsDataoption = {
       labels: {
         color: "white",
         font: { size: 12, family: 'Montserrat, sans-serif' },
-        boxWidth: 10,   // ✅ width 4px
-        boxHeight: 10,  // ✅ height 4px
+        boxWidth: 10,
+        boxHeight: 10,
       },
     },
   },
@@ -118,45 +118,35 @@ export const ageSegmentsDataoption = {
     x: {
       ticks: {
         color: "white",
-         font: {
-            family: "Montserrat, sans-serif",
-            size: 12,
-            weight: "500",
-          },
+        font: {
+          family: "Montserrat, sans-serif",
+          size: 12,
+          weight: "500",
+        },
       },
-      grid: {
-        color: "#333333",
-      },
-      offset: true, // ✅ zyda gap create karega
+      grid: { color: "#333333" },
+      offset: true,
     },
     y: {
       min: 0,
-      max: 10000,
-       font: {
-            family: "Montserrat, sans-serif",
-            size: 12,
-            weight: "500",
-          },
-    
+      // ❌ Removed hardcoded max: 10000
+      font: {
+        family: "Montserrat, sans-serif",
+        size: 12,
+        weight: "500",
+      },
       ticks: {
         color: "white",
-        callback: function (value) {
-          if (value === 0) return "0";
-          if (value === 1000) return "1k";
-          if (value === 2000) return "2k";
-          if (value === 5000) return "5k";
-          if (value === 10000) return "10k";
-          return "";
-        },
+        // ❌ Removed hardcoded callback with fixed values (1k, 2k, 5k, 10k)
+        // ✅ Chart.js will now auto-generate ticks based on actual data
       },
       grid: { color: "#333333" },
     },
   },
-  // ✅ ye niche se bar ki width / spacing aur zyada control karega
   datasets: {
     bar: {
-      barPercentage: 0.9,      // chhoti bar
-      categoryPercentage: 0.5, // zyda space
+      barPercentage: 0.9,
+      categoryPercentage: 0.5,
     },
   },
 };
