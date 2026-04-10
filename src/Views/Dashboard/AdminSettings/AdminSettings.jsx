@@ -10,6 +10,10 @@ import { toast } from 'react-toastify';
 
 const AdminSettings = () => {
   const token = useSelector((state) => state.admin.token);
+
+  // ✅ Get the currently logged-in admin's ID from Redux
+  const currentUserId = useSelector((state) => state.admin.user?._id);
+
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   
@@ -49,6 +53,12 @@ const AdminSettings = () => {
 
   // Delete user handler
   const handleDelete = async (userId) => {
+    // ✅ Prevent admin from deleting their own account
+    if (userId === currentUserId) {
+      toast.error('You cannot delete your own account.');
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to delete this user?')) {
       return;
     }
@@ -94,7 +104,7 @@ const AdminSettings = () => {
     name: user.name,
     email: user.email,
     accessType: getRoleDisplay(user.role),
-    role: user.role, // Keep original role for operations
+    role: user.role,
     isActive: user.isActive,
     userId: user._id,
   })) || [];
@@ -149,40 +159,54 @@ const AdminSettings = () => {
       key: "manageAdmin",
       label: "Manage Admin",
       align: "center",
-      render: (row) => (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "16px",
-          }}
-        >
-          {/* Edit Icon */}
-          <RiEditLine
-            size={26}
-            style={{
-              cursor: "pointer",
-              color: "#4CAF50",
-            }}
-            onClick={() => handleEdit(row)}
-          />
+      render: (row) => {
+        // ✅ A row is not deletable if it's the current user OR a super_admin
+        const isSelf = row.userId === currentUserId;
+        const isSuperAdmin = row.role === "super_admin";
+        const canDelete = !isSelf && !isSuperAdmin;
 
-          {/* Delete Icon */}
-          <RiDeleteBin2Line
-            size={26}
-            style={{
-              cursor: row.role !== "super_admin" ? "pointer" : "not-allowed",
-              color: row.role !== "super_admin" ? "red" : "#666",
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "16px",
             }}
-            onClick={() => {
-              if (row.role !== "super_admin") {
-                handleDelete(row.userId);
+          >
+            {/* Edit Icon */}
+            <RiEditLine
+              size={26}
+              style={{
+                cursor: "pointer",
+                color: "#4CAF50",
+              }}
+              onClick={() => handleEdit(row)}
+            />
+
+            {/* Delete Icon */}
+            <RiDeleteBin2Line
+              size={26}
+              style={{
+                cursor: canDelete ? "pointer" : "not-allowed",
+                color: canDelete ? "red" : "#666",
+              }}
+              title={
+                isSelf
+                  ? "You cannot delete your own account"
+                  : isSuperAdmin
+                  ? "Super Admin cannot be deleted"
+                  : "Delete user"
               }
-            }}
-          />
-        </Box>
-      ),
+              onClick={() => {
+                if (canDelete) {
+                  handleDelete(row.userId);
+                }
+              }}
+            />
+          </Box>
+        );
+      },
     }
   ];
 

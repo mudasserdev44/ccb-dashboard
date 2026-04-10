@@ -117,11 +117,11 @@ const TotalExpenses = ({ initialExpenses }) => {
     { label: 'Miscellaneous', amount: '$150', percentage: '57.3%', color: '#f112d3' },
   ]);
 
-  useEffect(() => {
-    if (initialExpenses && initialExpenses.length > 0) {
-      setExpensesList(initialExpenses);
-    }
-  }, [initialExpenses]);
+  // useEffect(() => {
+  //   // if (initialExpenses && initialExpenses.length > 0) {
+  //     setExpensesList(initialExpenses);
+  //   // }
+  // }, []);
 
   const handleAddEntry = () => {
     if (field && expense && expense !== '$') {
