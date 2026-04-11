@@ -110,11 +110,27 @@ const CircularProgressWithLabel = ({
   saleheading,
   profitheading
 }) => {
-  const progress = Math.min(Math.max(percentage, 0), 100);
-  const strokeWidth = 20;
-  const radius = 90;
+  const [size, setSize] = useState(200);
+
+  useEffect(() => {
+    const updateSize = () => {
+      const width = window.innerWidth;
+      if (width < 480) setSize(120);
+      else if (width < 768) setSize(150);
+      else if (width < 1024) setSize(170);
+      else setSize(200);
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  const strokeWidth = size * 0.1;
+  const radius = (size / 2) - (strokeWidth / 2) - 2;
   const circumference = 2 * Math.PI * radius;
+  const progress = Math.min(Math.max(percentage, 0), 100);
   const strokeDashoffset = circumference - (progress / 100) * circumference;
+  const center = size / 2;
 
   return (
     <Box
@@ -123,46 +139,45 @@ const CircularProgressWithLabel = ({
         display: "inline-flex",
         flexDirection: "column",
         alignItems: "center",
-        margin: "0 15px",
-        fontFamily: 'Montserrat, sans-serif'
+        margin: { xs: "0 5px", md: "0 15px" },
+        fontFamily: 'Montserrat, sans-serif',
       }}
     >
       <Box
         sx={{
           position: "relative",
-          width: 200,
-          height: 200,
+          width: size,
+          height: size,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontFamily: 'Montserrat, sans-serif'
+          fontFamily: 'Montserrat, sans-serif',
         }}
       >
         <svg
-          width="200"
-          height="200"
-          viewBox="0 0 200 200"
-          style={{ position: "absolute", }}
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          style={{ position: "absolute" }}
         >
           <circle
-            cx="100"
-            cy="100"
+            cx={center}
+            cy={center}
             r={radius}
             fill="none"
             stroke="#87888C"
             strokeWidth={strokeWidth}
           />
           <circle
-            cx="100"
-            cy="100"
+            cx={center}
+            cy={center}
             r={radius}
             fill="none"
             stroke={color}
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
-            // strokeLinecap="round"
-            transform="rotate(-90 100 100)"
+            transform={`rotate(-90 ${center} ${center})`}
           />
         </svg>
 
@@ -174,32 +189,46 @@ const CircularProgressWithLabel = ({
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1,
-
           }}
         >
-          <Typography variant="h6" component="div" sx={{ color: "#CFCFCF", fontWeight: "bold", fontFamily: 'Montserrat, sans-serif' }}>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{
+              color: "#CFCFCF",
+              fontWeight: "bold",
+              fontFamily: 'Montserrat, sans-serif',
+              fontSize: { xs: "0.75rem", sm: "0.9rem", md: "1.1rem" },
+            }}
+          >
             {date}
           </Typography>
-          <Typography variant="body2" sx={{
-            color: "#FEF08A",
-            fontWeight: "bold",
-            fontSize: "20px",
-            display: "flex",
-            gap: "10px",
-            fontFamily: 'Montserrat, sans-serif',
-            borderBottom: "1px solid white"
-          }}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "#FEF08A",
+              fontWeight: "bold",
+              fontSize: { xs: "0.75rem", sm: "0.9rem", md: "1.25rem" },
+              display: "flex",
+              gap: "6px",
+              fontFamily: 'Montserrat, sans-serif',
+              borderBottom: "1px solid white",
+            }}
+          >
             <span>{saleheading}</span>
             {sale}
           </Typography>
-          <Typography variant="caption" sx={{
-            color: "#FEF08A",
-            fontWeight: "bold",
-            fontSize: "20px",
-            display: "flex",
-            fontFamily: 'Montserrat, sans-serif',
-            gap: "10px"
-          }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "#FEF08A",
+              fontWeight: "bold",
+              fontSize: { xs: "0.75rem", sm: "0.9rem", md: "1.25rem" },
+              display: "flex",
+              fontFamily: 'Montserrat, sans-serif',
+              gap: "6px",
+            }}
+          >
             <span>{profitheading}</span>
             {profit}
           </Typography>
@@ -342,21 +371,22 @@ const USMap = ({
 
 
       <div className="flex-grow relative">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between text-white gap-2" style={{ padding: 10 }}>
-          <h1 className="text-white text-xl">
-            Total: <span className="text-[#FFFF00]">{(currentTotal || 0).toLocaleString()}</span>
-          </h1>
-          <div className="text-sm sm:text-base text-gray-300">
-            Current Region:&nbsp;
-            {activeRegion ? (
-              <span className="text-[#fef08a] font-semibold">
-                {activeRegion.name} ({activeRegion.value.toLocaleString()})
-              </span>
-            ) : (
-              <span>Hover over a region</span>
-            )}
-          </div>
-        </div>
+        <div className="flex flex-col items-start text-white gap-1" style={{ padding: 10 }}>
+  <h1 className="text-lg sm:text-xl md:text-2xl font-semibold">
+    Total:{" "}
+    <span className="text-[#FFFF00]">{(currentTotal || 0).toLocaleString()}</span>
+  </h1>
+  <div className="text-xs sm:text-sm md:text-base text-gray-300">
+    Current Region:&nbsp;
+    {activeRegion ? (
+      <span className="text-[#fef08a] font-semibold">
+        {activeRegion.name} ({activeRegion.value.toLocaleString()})
+      </span>
+    ) : (
+      <span>Hover over a region</span>
+    )}
+  </div>
+</div>
         <ComposableMap
           projection={
             selectedCountry === "usa"
@@ -518,146 +548,90 @@ const PieChartBase = ({
     color: item.color,
   }));
 
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const containerRef = useRef(null);
+  const [dynamicSize, setDynamicSize] = useState(chartWidth);
 
   useEffect(() => {
-    const checkScreenSize = () => setIsSmallScreen(window.innerWidth <= 780);
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
+    const updateSize = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        // Small screens par container width se size lo, max chartWidth tak
+        const size = Math.min(containerWidth * 0.6, chartWidth);
+        setDynamicSize(Math.max(size, 150)); // minimum 150px
+      }
+    };
+    updateSize();
+    const resizeObserver = new ResizeObserver(updateSize);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, [chartWidth]);
+
+  const isSmallScreen = dynamicSize < 200;
+  const actualHeight = isSmallScreen ? dynamicSize : chartHeight;
 
   return (
-<Box
-  sx={{
-    display: 'flex',
-    flexDirection: isSmallScreen ? 'column' : 'row',
-    alignItems: "center",          // vertical center
-    justifyContent: "center",      // horizontal center 👈 yeh important hai
-    color: textColor,
-    fontFamily: 'Montserrat, sans-serif',
-    gap: isSmallScreen ? 2 : 4,    // chart aur legends ke beech gap
-  }}
->      {/* Chart left */}
-  <Box sx={{ flexShrink: 0, display: "flex", justifyContent: "center", width: chartWidth, height: chartHeight,    }}>
+    <Box
+      ref={containerRef}
+      sx={{
+        display: 'flex',
+        flexDirection: isSmallScreen ? 'column' : 'row',
+        alignItems: "center",
+        justifyContent: "center",
+        color: textColor,
+        fontFamily: 'Montserrat, sans-serif',
+        gap: isSmallScreen ? 1 : 4,
+        width: '100%',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Chart */}
+      <Box sx={{ flexShrink: 0, display: "flex", justifyContent: "center", width: dynamicSize, height: actualHeight }}>
         <PieChart
           series={[
             {
               data: chartData,
-        outerRadius: Math.min(chartWidth, chartHeight) / 2 - 10, // 👈 perfect circle radius
+              outerRadius: Math.min(dynamicSize, actualHeight) / 2 - 10,
               innerRadius: 0,
               paddingAngle: 0,
               cornerRadius: 0,
               startAngle: -90,
               endAngle: 270,
               faded: { innerRadius: 30, outerRadius: 100, arcLabel: 'none' },
-              arcLabel: (item) =>
-                showInternalLabels ? `${item.value.toFixed(0)}` : '',
+              arcLabel: (item) => showInternalLabels ? `${item.value.toFixed(0)}` : '',
               arcLabelMinAngle: 20,
               arcLabelReference: 'inner',
             },
           ]}
           colors={chartData.map((item) => item.color)}
-          // height={chartHeight}
-          // layout={{ width: chartWidth, height: chartHeight }}
-            width={chartWidth}   // 👈 set width
-    height={chartHeight}
-          slotProps={{
-            legend: { hidden: true },
-          }}
+          width={dynamicSize}
+          height={actualHeight}
+          slotProps={{ legend: { hidden: true } }}
           sx={{
-            '.MuiChartsLegend-root': {
-              '& text': {
-                fill: `${textColor} !important`,
-                fontSize: 14,
-              },
-              '& .MuiChartsLegend-series': {
-                '& text': {
-                  fill: `${textColor} !important`,
-                  fontSize: 14,
-                },
-              },
-              '& .MuiChartsLegend-mark + text': {
-                fill: `${textColor} !important`,
-                fontSize: 14,
-              },
-            },
-            '.MuiChartsLegend-series text': {
-              fill: `${textColor} !important`,
-              fontSize: 14,
-            },
-            '.MuiChartsLegend-root text': {
-              fill: `${textColor} !important`,
-              fontSize: 14,
-            },
-            '.MuiChartsArcLabel-root text': {
-              fill: `${textColor} !important`,
-              fontWeight: 'bold',
-              fontSize: isSmallScreen ? 10 : 16,
-            },
             '.MuiChartsArcLabel-root': {
               fill: `${textColor} !important`,
               fontWeight: 'bold',
               fontSize: isSmallScreen ? 10 : 16,
             },
-            '.MuiChartsTooltip-root': {
-              backgroundColor: 'rgba(0,0,0,0.7)',
-              color: `${textColor} !important`,
-            },
-            '.MuiChartsTooltip-root .MuiChartsTooltip-table': {
-              color: `${textColor} !important`,
-            },
-            '.MuiChartsAxis-tickLabel': {
-              fill: `${textColor} !important`,
-            },
-            '.MuiChartsAxis-line': {
-              stroke: `${textColor} !important`,
-            },
-            '.MuiChartsLegend-mark': {
-              borderRadius: '50%',
-            },
-            '& *': {
-              color: `${textColor} !important`,
-            },
-            '& text': {
-              fill: `${textColor} !important`,
-            },
-            '& .MuiChartsLegend-series': {
-              '& text': {
-                fill: `${textColor} !important`,
-              },
-            },
+            '& text': { fill: `${textColor} !important` },
+            '& *': { color: `${textColor} !important` },
           }}
         />
       </Box>
 
-      <Box  sx={{
-      display: 'flex',
-      flexWrap: "wrap",
-      flexDirection: isSmallScreen ? 'row' : 'column',
-      gap: isSmallScreen ? 1 : 1.5,
-      mt: isSmallScreen ? 2 : 0,
-      alignItems: isSmallScreen ? "center" : "flex-start",
-    }}>
+      {/* Legend */}
+      <Box sx={{
+        display: 'flex',
+        flexWrap: "wrap",
+        flexDirection: isSmallScreen ? 'row' : 'column',
+        gap: isSmallScreen ? 1 : 1.5,
+        mt: isSmallScreen ? 1 : 0,
+        alignItems: isSmallScreen ? "center" : "flex-start",
+        justifyContent: isSmallScreen ? "center" : "flex-start",
+      }}>
         {chartData.map((item) => (
-          <Box
-            key={item.label}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: 1.5,
-            }}
-          >
-            <Box
-              sx={{
-                width: 10,
-                height: 10,
-                backgroundColor: item.color,
-                borderRadius: '50%',
-                marginRight: 1.5,
-              }}
-            />
-            <Typography sx={{ color: textColor, fontSize: 12, fontFamily: 'Montserrat, sans-serif' }}>
+          <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', marginBottom: isSmallScreen ? 0 : 1.5 }}>
+            <Box sx={{ width: 10, height: 10, backgroundColor: item.color, borderRadius: '50%', marginRight: 1.5, flexShrink: 0 }} />
+            <Typography sx={{ color: textColor, fontSize: isSmallScreen ? 10 : 12, fontFamily: 'Montserrat, sans-serif' }}>
               {item.label}
             </Typography>
           </Box>

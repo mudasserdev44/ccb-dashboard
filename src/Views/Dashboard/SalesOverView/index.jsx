@@ -143,15 +143,16 @@ const SalesOverview = () => {
               <DashboardCard sx={{ padding: "10px" }}>
                 <Box
                   sx={{
-                    display: "flex",
-                    flexDirection: { xs: "column", sm: "row" },
-                    fontFamily: "Montserrat, sans-serif",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "20px",
-                    mt: "15%",
-                    flexWrap: { xs: "wrap", md: "nowrap" },
-                  }}
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                  fontFamily: "Montserrat, sans-serif",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: { xs: "16px", sm: "10px", md: "20px" },
+                  mt: { xs: "5%", md: "15%" },
+                  flexWrap: "wrap",        // remove the nowrap override
+                  padding: { xs: "10px", md: "0" },
+                }}
                 >
                   <CircularProgressWithLabel
                     profitheading="P" saleheading="S" date="MoM" color="#2DD4BF"
