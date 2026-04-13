@@ -241,19 +241,33 @@ const SalesOverview = () => {
               <BarChartSkeleton />
             ) : (
               <DashboardCard sx={{ paddingX: "10px", height: "320px", marginTop: "6px" }}>
-                <h1
-                  className="flex items-end justify-end gap-3 text-xl"
-                  style={{ marginTop: "4px", paddingTop: "10px", paddingBottom: "25px", fontFamily: "Montserrat, sans-serif" }}
-                >
-                  Weekly Average: <span className="text-[#FEF08A]">50/day</span>
-                </h1>
-                <div style={{ height: "250px" }}>
-                  <Bar
-                    data={couponChartData}
-                    options={{ ...chartOptions.coupon, maintainAspectRatio: false, responsive: true }}
-                  />
-                </div>
-              </DashboardCard>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: "4px",
+                  marginTop: "4px",
+                  paddingTop: "10px",
+                  paddingBottom: "25px",
+                  fontFamily: "Montserrat, sans-serif",
+                  fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                  fontWeight: "bold",
+                  color: "#fff",
+                  lineHeight: 1.3,
+                }}
+              >
+                <span>Weekly Average:</span>
+                <span style={{ color: "#FEF08A", whiteSpace: "nowrap" }}>50/day</span>
+              </Box>
+              <div style={{ height: "250px" }}>
+                <Bar
+                  data={couponChartData}
+                  options={{ ...chartOptions.coupon, maintainAspectRatio: false, responsive: true }}
+                />
+              </div>
+            </DashboardCard>
             )}
           </Grid>
 

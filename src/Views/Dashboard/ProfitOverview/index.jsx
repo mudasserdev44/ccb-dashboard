@@ -146,10 +146,13 @@ const index = () => {
   const total = Doughnutdata.datasets[0].data.reduce((sum, value) => sum + value, 0);
 
   const legendData = [
-    { label: 'Marketing', color: '#e879f9' },
-    { label: 'Apple Dev Fee', color: '#c084fc' },
-    { label: 'Google Dev Fee', color: '#60a5fa' },
-    { label: 'Ambassador Payouts', color: '#FDE047' },
+    { label: 'Marketing', color: '#E91E63' },
+    { label: 'Apple Dev Fee', color: '#FFEB3B' },
+    { label: 'Google Dev Fee', color: '#2196F3' },
+    { label: 'Ambassador Payouts', color: '#4CAF50' },
+    { label: 'Server and Tools', color: '#5710e5' },
+    { label: 'Miscellaneous', color: '#f112d3' },
+
   ];
 
   const getProfitOverviewData = async() =>{

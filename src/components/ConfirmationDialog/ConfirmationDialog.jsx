@@ -54,6 +54,7 @@ const ConfirmationDialog = ({
     >
       <DialogTitle
         sx={{
+          textAlign: 'center',  
           backgroundColor: '#1E1E1E',
           color: 'white',
           fontFamily: 'Montserrat, sans-serif',
@@ -91,6 +92,8 @@ const ConfirmationDialog = ({
             fontFamily: 'Montserrat, sans-serif',
             fontSize: '15px',
             lineHeight: 1.6,
+            textAlign: 'center', 
+            mt:3
           }}
         >
           {message}
