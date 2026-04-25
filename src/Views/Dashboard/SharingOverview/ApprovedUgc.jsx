@@ -2,28 +2,49 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
     Box,
     Button,
-    Select,
     MenuItem,
-    styled,
     TextField,
     InputAdornment,
     Checkbox,
     CircularProgress,
     Typography,
+    IconButton,
+    Tooltip,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CustomTable from '../../../components/CustomTable/CustomTable';
 import { FaRecycle } from 'react-icons/fa6';
-import { IoIosArrowDown } from "react-icons/io";
 import DarkSelect from '../../../components/common/DarkSelect';
 import DarkTextField from '../../../components/common/DarkTextField';
+import ConfirmationDialog from '../../../components/ConfirmationDialog/ConfirmationDialog';
+import ToastComp from '../../../components/toast/ToastComp';
+import { request } from '../../../services/axios';
+import { useSelector } from 'react-redux';
 
 // ===== Main Component =====
-const ApprovedUgc = ({ approved_data, loading }) => {
+const ApprovedUgc = ({ approved_data, loading, mutate }) => {
+    const token = useSelector((state) => state.admin.token);
     const [data, setData] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All Category');
     const [selectedRows, setSelectedRows] = useState([]);
+    const [loadingCoupons, setLoadingCoupons] = useState({});
+    const [bulkLoading, setBulkLoading] = useState(false);
+
+    // Single publish dialog
+    const [dialogState, setDialogState] = useState({
+        open: false,
+        couponId: null,
+        title: '',
+        message: '',
+    });
+
+    // Bulk publish dialog
+    const [bulkDialogState, setBulkDialogState] = useState({
+        open: false,
+        title: '',
+        message: '',
+    });
 
     // Load approved data when available
     useEffect(() => {
@@ -93,6 +114,112 @@ const ApprovedUgc = ({ approved_data, loading }) => {
         [selectedRows]
     );
 
+    // ─── Single publish ───────────────────────────────────────────────────────
+
+    const handlePublishClick = (couponId) => {
+        setDialogState({
+            open: true,
+            couponId,
+            title: 'Publish Coupon',
+            message: 'Are you sure you want to publish this coupon?',
+        });
+    };
+
+    const handleDialogClose = () => {
+        setDialogState({ open: false, couponId: null, title: '', message: '' });
+    };
+
+    const publishCoupon = async (id) => {
+        return await request(
+            { url: "/admin/publish", method: "post", data: { couponIds: id, published: true } },
+            false,
+            token
+        );
+    };
+
+    const handleDialogConfirm = async () => {
+        const { couponId } = dialogState;
+
+        setLoadingCoupons(prev => ({ ...prev, [couponId]: true }));
+        handleDialogClose();
+
+        const previousData = data;
+
+        try {
+            await publishCoupon(couponId);
+
+            setData(prev => prev.filter(item => item.id !== couponId));
+
+            ToastComp({ message: "Coupon Published Successfully", variant: "success" });
+
+            if (mutate) {
+                try { await mutate(); } catch (mErr) { console.warn('mutate() failed:', mErr); }
+            }
+        } catch (error) {
+            console.error("Publish failed:", error);
+            setData(previousData);
+            ToastComp({ message: "Failed to publish coupon", variant: "error" });
+        } finally {
+            setLoadingCoupons(prev => {
+                const next = { ...prev };
+                delete next[couponId];
+                return next;
+            });
+        }
+    };
+
+    // ─── Bulk publish (bottom button) ────────────────────────────────────────
+
+    const handleBulkPublishClick = () => {
+        setBulkDialogState({
+            open: true,
+            title: 'Publish Selected Coupons',
+            message: `Are you sure you want to publish ${selectedRows.length} selected coupon(s)?`,
+        });
+    };
+
+    const handleBulkDialogClose = () => {
+        setBulkDialogState({ open: false, title: '', message: '' });
+    };
+
+    const bulkPublishCoupons = async (ids) => {
+        return await request(
+            { url: "/admin/publish", method: "post", data: { couponIds:ids, published: true } },
+            false,
+            token
+        );
+    };
+
+    const handleBulkDialogConfirm = async () => {
+        const ids = [...selectedRows];
+
+        setBulkLoading(true);
+        handleBulkDialogClose();
+
+        const previousData = data;
+        const previousSelected = selectedRows;
+
+        try {
+            await bulkPublishCoupons(ids);
+
+            setData(prev => prev.filter(item => !ids.includes(item.id)));
+            setSelectedRows([]);
+
+            ToastComp({ message: `${ids.length} Coupon(s) Published Successfully`, variant: "success" });
+
+            if (mutate) {
+                try { await mutate(); } catch (mErr) { console.warn('mutate() failed:', mErr); }
+            }
+        } catch (error) {
+            console.error("Bulk publish failed:", error);
+            setData(previousData);
+            setSelectedRows(previousSelected);
+            ToastComp({ message: "Failed to publish selected coupons", variant: "error" });
+        } finally {
+            setBulkLoading(false);
+        }
+    };
+
     // ===== Loader =====
     if (loading) {
         return (
@@ -111,6 +238,10 @@ const ApprovedUgc = ({ approved_data, loading }) => {
             </Box>
         );
     }
+
+    // ─── Disable logic for single action icon ────────────────────────────────
+    const isSingleActionDisabled = selectedRows.length > 1 || bulkLoading;
+    const isAnyCouponLoading = Object.keys(loadingCoupons).length > 0;
 
     // ===== Table Columns =====
     const approvedColumns = [
@@ -138,26 +269,43 @@ const ApprovedUgc = ({ approved_data, loading }) => {
         { key: "description", label: "Description" },
         { key: "noofuses", label: "No. of uses" },
         {
-            key: "status",
-            label: "Status",
-            render: () => (
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        color: '#66BB6A',
-                    }}
-                >
-                    <FaRecycle
-                        style={{
-                            fontSize: '1.5rem',
-                            cursor: 'pointer',
-                            transition: '0.2s',
-                        }}
-                    />
-                </Box>
-            ),
+            key: "action",
+            label: "Action",
+            render: (row) => {
+                const isThisCouponLoading = !!loadingCoupons[row.id];
+                const isDisabled = isSingleActionDisabled || isAnyCouponLoading || bulkLoading;
+
+                let tooltipTitle = "Publish Coupon";
+                if (selectedRows.length > 1) tooltipTitle = "Deselect others to publish individually";
+                else if (isAnyCouponLoading || bulkLoading) tooltipTitle = "Processing...";
+
+                return (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <Tooltip title={tooltipTitle} placement="top">
+                            <span>
+                                <IconButton
+                                    onClick={() => handlePublishClick(row.id)}
+                                    disabled={isDisabled}
+                                    sx={{
+                                        color: isDisabled ? '#666' : '#66BB6A',
+                                        '&:hover': {
+                                            backgroundColor: isDisabled ? 'transparent' : '#66BB6A20',
+                                            transform: isDisabled ? 'none' : 'scale(1.1)',
+                                        },
+                                        transition: 'all 0.2s',
+                                    }}
+                                >
+                                    {isThisCouponLoading ? (
+                                        <CircularProgress size={24} sx={{ color: '#66BB6A' }} />
+                                    ) : (
+                                        <FaRecycle style={{ fontSize: '1.5rem' }} />
+                                    )}
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </Box>
+                );
+            },
         },
     ];
 
@@ -245,6 +393,7 @@ const ApprovedUgc = ({ approved_data, loading }) => {
                         getRowColor={getRowColor}
                         selectedRows={selectedRows}
                         onSelectAll={handleSelectAll}
+                        onRefresh={() => mutate && mutate()}
                     />
                 </Box>
             )}
@@ -269,6 +418,8 @@ const ApprovedUgc = ({ approved_data, loading }) => {
                 </Button>
                 <Button
                     variant="contained"
+                    disabled={selectedRows.length === 0 || bulkLoading}
+                    onClick={handleBulkPublishClick}
                     sx={{
                         backgroundColor: '#2E7D32',
                         '&:hover': { backgroundColor: '#1B5E20' },
@@ -278,11 +429,42 @@ const ApprovedUgc = ({ approved_data, loading }) => {
                         borderRadius: '8px',
                         padding: '10px 24px',
                         fontFamily: 'Montserrat, sans-serif',
+                        '&.Mui-disabled': {
+                            backgroundColor: '#444',
+                            color: '#999',
+                        },
                     }}
                 >
+                    {bulkLoading && (
+                        <CircularProgress size={20} sx={{ color: '#fff', mr: 1 }} />
+                    )}
                     Move to Default Coupons
                 </Button>
             </Box>
+
+            {/* Single publish confirmation dialog */}
+            <ConfirmationDialog
+                open={dialogState.open}
+                onClose={handleDialogClose}
+                onConfirm={handleDialogConfirm}
+                title={dialogState.title}
+                message={dialogState.message}
+                confirmText="Publish"
+                cancelText="Cancel"
+                type="publish"
+            />
+
+            {/* Bulk publish confirmation dialog */}
+            <ConfirmationDialog
+                open={bulkDialogState.open}
+                onClose={handleBulkDialogClose}
+                onConfirm={handleBulkDialogConfirm}
+                title={bulkDialogState.title}
+                message={bulkDialogState.message}
+                confirmText="Publish All"
+                cancelText="Cancel"
+                type="publish"
+            />
         </Box>
     );
 };

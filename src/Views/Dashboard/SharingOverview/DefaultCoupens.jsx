@@ -53,9 +53,19 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedRows, setSelectedRows] = useState([]);
     const [loadingCoupons, setLoadingCoupons] = useState({});
+    const [bulkLoading, setBulkLoading] = useState(false);
+
+    // Single publish dialog
     const [dialogState, setDialogState] = useState({
         open: false,
         couponId: null,
+        title: '',
+        message: '',
+    });
+
+    // Bulk publish dialog
+    const [bulkDialogState, setBulkDialogState] = useState({
+        open: false,
         title: '',
         message: '',
     });
@@ -72,7 +82,7 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                 title: item.title,
                 description: item.description,
                 source: item.source || "Admin",
-                uses: item.usageCount  || 0,
+                uses: item.usageCount || 0,
             }));
             setData(formatted);
         }
@@ -98,9 +108,7 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                 row.username.toLowerCase().includes(lowerCaseSearchTerm) ||
                 row.title.toLowerCase().includes(lowerCaseSearchTerm) ||
                 row.description.toLowerCase().includes(lowerCaseSearchTerm);
-
             const matchesCategory = selectedCategory === '' || row.category === selectedCategory;
-
             return matchesSearch && matchesCategory;
         });
     }, [data, searchTerm, selectedCategory]);
@@ -129,101 +137,117 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
         return selectedRows.includes(row.id) ? '#2e2e2e' : '#171717';
     }, [selectedRows]);
 
-    // Handle unpublish click
-    const handleUnpublishClick = (couponId) => {
+    // ─── Single publish ───────────────────────────────────────────────────────
+
+    const handlePublishClick = (couponId) => {
         setDialogState({
             open: true,
-            couponId: couponId,
+            couponId,
             title: 'Unpublish Coupon',
             message: 'Are you sure you want to unpublish this coupon?',
         });
     };
 
     const handleDialogClose = () => {
-        setDialogState({
-            open: false,
-            couponId: null,
-            title: '',
-            message: '',
-        });
+        setDialogState({ open: false, couponId: null, title: '', message: '' });
     };
 
-    // Unpublish API call
-    const unpublishCoupon = async (id) => {
-        const data = {
-            couponId: id,
-            published: false
-        };
-        
+    const publishCoupon = async (id) => {
+        return await request(
+            { url: "/admin/publish", method: "post", data: { couponIds: id, published: false } },
+            false,
+            token
+        );
+    };
+
+    const handleDialogConfirm = async () => {
+        const { couponId } = dialogState;
+
+        setLoadingCoupons(prev => ({ ...prev, [couponId]: true }));
+        handleDialogClose();
+
+        const previousData = data;
+
         try {
-            const res = await request({
-                url: "/admin/publish",
-                method: "post",
-                data: data
-            }, false, token);
-            return res;
-        } catch (err) {
-            console.error("Unpublish error:", err);
-            throw err;
+            await publishCoupon(couponId);
+
+            setData(prev => prev.filter(item => item.id !== couponId));
+
+            ToastComp({ message: "Coupon Unpublished Successfully", variant: "success" });
+
+            if (mutate) {
+                try { await mutate(); } catch (mErr) { console.warn('mutate() failed:', mErr); }
+            }
+        } catch (error) {
+            console.error("Publish failed:", error);
+            setData(previousData);
+            ToastComp({ message: "Failed to unpublish coupon", variant: "error" });
+        } finally {
+            setLoadingCoupons(prev => {
+                const next = { ...prev };
+                delete next[couponId];
+                return next;
+            });
         }
     };
 
-   const handleDialogConfirm = async () => {
-    const { couponId } = dialogState;
+    // ─── Bulk publish (bottom button) ────────────────────────────────────────
 
-    // Set loading state for this specific coupon
-    setLoadingCoupons(prev => ({
-        ...prev,
-        [couponId]: true
-    }));
-
-    handleDialogClose();
-
-    // Keep a snapshot to restore on failure
-    const previousData = data;
-
-    try {
-        const res = await unpublishCoupon(couponId);
-
-        // As soon as we get a successful response, update UI immediately
-        // Remove the coupon from local data so it appears unpublished without waiting for mutate()
-        setData(prev => prev.filter(item => item.id !== couponId));
-
-        ToastComp({
-            message: "Coupon Unpublished Successfully",
-            variant: "success"
+    const handleBulkPublishClick = () => {
+        setBulkDialogState({
+            open: true,
+            title: 'Unpublish Selected Coupons',
+            message: `Are you sure you want to unpublish ${selectedRows.length} selected coupon(s)?`,
         });
+    };
 
-        // Try to refresh server data in background to ensure consistency.
-        // If mutate is passed from parent, call it. It's okay if it resolves later.
-        if (mutate) {
-            try {
-                await mutate();
-            } catch (mErr) {
-                // If refetch fails, we still have updated local state; log the error.
-                console.warn('mutate() failed after optimistic update:', mErr);
+    const handleBulkDialogClose = () => {
+        setBulkDialogState({ open: false, title: '', message: '' });
+    };
+
+    const bulkPublishCoupons = async (ids) => {
+        return await request(
+            { url: "/admin/publish", method: "post", data: { couponIds: ids, published: false } },
+            false,
+            token
+        );
+    };
+
+    const handleBulkDialogConfirm = async () => {
+        const ids = [...selectedRows];
+
+        setBulkLoading(true);
+        handleBulkDialogClose();
+
+        const previousData = data;
+        const previousSelected = selectedRows;
+
+        try {
+            await bulkPublishCoupons(ids);
+
+            setData(prev => prev.filter(item => !ids.includes(item.id)));
+            setSelectedRows([]);
+
+            ToastComp({ message: `${ids.length} Coupon(s) Unpublished Successfully`, variant: "success" });
+
+            if (mutate) {
+                try { await mutate(); } catch (mErr) { console.warn('mutate() failed:', mErr); }
             }
+        } catch (error) {
+            console.error("Bulk publish failed:", error);
+            setData(previousData);
+            setSelectedRows(previousSelected);
+            ToastComp({ message: "Failed to unpublish selected coupons", variant: "error" });
+        } finally {
+            setBulkLoading(false);
         }
-    } catch (error) {
-        console.error("Unpublish failed:", error);
+    };
 
-        // Restore previous data so UI reflects the truth
-        setData(previousData);
+    // ─── Table columns ────────────────────────────────────────────────────────
 
-        ToastComp({
-            message: "Failed to unpublish coupon",
-            variant: "error"
-        });
-    } finally {
-        // Remove loading state for this coupon
-        setLoadingCoupons(prev => {
-            const next = { ...prev };
-            delete next[couponId];
-            return next;
-        });
-    }
-};
-
+    // Single action icon is disabled when multiple rows are selected OR any bulk op is running
+    const isSingleActionDisabled = selectedRows.length > 1 || bulkLoading;
+    const isAnyCouponLoading = Object.keys(loadingCoupons).length > 0;
 
     const ugcSourceColumns = useMemo(() => [
         {
@@ -235,9 +259,7 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                     onChange={() => handleRowToggle(row.id)}
                     sx={{
                         color: '#FEF08A',
-                        '&.Mui-checked': {
-                            color: '#16A34A',
-                        },
+                        '&.Mui-checked': { color: '#16A34A' },
                     }}
                 />
             )
@@ -262,15 +284,20 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
             key: "action",
             label: "Action",
             render: (row) => {
-                const isLoading = loadingCoupons[row.id];
-                const isDisabled = isLoading || Object.keys(loadingCoupons).some(key => loadingCoupons[key]);
+                const isThisCouponLoading = !!loadingCoupons[row.id];
+                // Disable if: multiple rows selected, OR any single publish is running, OR bulk is running
+                const isDisabled = isSingleActionDisabled || isAnyCouponLoading || bulkLoading;
+
+                let tooltipTitle = "Unpublish Coupon";
+                if (selectedRows.length > 1) tooltipTitle = "Deselect others to unpublish individually";
+                else if (isAnyCouponLoading || bulkLoading) tooltipTitle = "Processing...";
 
                 return (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <Tooltip title={isDisabled ? "Processing..." : "Unpublish Coupon"} placement="top">
+                        <Tooltip title={tooltipTitle} placement="top">
                             <span>
                                 <IconButton
-                                    onClick={() => handleUnpublishClick(row.id)}
+                                    onClick={() => handlePublishClick(row.id)}
                                     disabled={isDisabled}
                                     sx={{
                                         color: isDisabled ? '#666' : '#66BB6A',
@@ -281,7 +308,7 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                                         transition: 'all 0.2s',
                                     }}
                                 >
-                                    {isLoading ? (
+                                    {isThisCouponLoading ? (
                                         <CircularProgress size={24} sx={{ color: '#66BB6A' }} />
                                     ) : (
                                         <FaRecycle style={{ fontSize: '1.5rem' }} />
@@ -293,7 +320,8 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                 );
             },
         },
-    ], [selectedRows, handleRowToggle, loadingCoupons]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ], [selectedRows, handleRowToggle, loadingCoupons, isSingleActionDisabled, isAnyCouponLoading, bulkLoading]);
 
     // ===== Loader =====
     if (loading) {
@@ -369,7 +397,7 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                 </Box>
             </Box>
 
-            {/* Table or No Data Message */}
+            {/* Table or No Data */}
             {filteredData.length === 0 ? (
                 <Box
                     sx={{
@@ -398,9 +426,7 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                     sx={{
                         backgroundColor: '#171717',
                         color: 'white',
-                        '& .MuiTable-root': {
-                            backgroundColor: 'transparent',
-                        },
+                        '& .MuiTable-root': { backgroundColor: 'transparent' },
                     }}
                 >
                     <CustomTable
@@ -435,7 +461,8 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                 </Button>
                 <Button
                     variant="contained"
-                    disabled={selectedRows.length === 0}
+                    disabled={selectedRows.length === 0 || bulkLoading}
+                    onClick={handleBulkPublishClick}
                     sx={{
                         backgroundColor: '#2E7D32',
                         color: 'white',
@@ -445,17 +472,17 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                         padding: '10px 24px',
                         fontFamily: 'Montserrat, sans-serif',
                         '&:hover': { backgroundColor: '#1B5E20' },
-                        '&.Mui-disabled': {
-                            backgroundColor: '#444',
-                            color: '#999',
-                        }
+                        '&.Mui-disabled': { backgroundColor: '#444', color: '#999' },
                     }}
                 >
+                    {bulkLoading ? (
+                        <CircularProgress size={20} sx={{ color: '#fff', mr: 1 }} />
+                    ) : null}
                     Move to Origin Queue
                 </Button>
             </Box>
 
-            {/* Confirmation Dialog */}
+            {/* Single publish confirmation dialog */}
             <ConfirmationDialog
                 open={dialogState.open}
                 onClose={handleDialogClose}
@@ -463,6 +490,18 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                 title={dialogState.title}
                 message={dialogState.message}
                 confirmText="Unpublish"
+                cancelText="Cancel"
+                type="unpublish"
+            />
+
+            {/* Bulk publish confirmation dialog */}
+            <ConfirmationDialog
+                open={bulkDialogState.open}
+                onClose={handleBulkDialogClose}
+                onConfirm={handleBulkDialogConfirm}
+                title={bulkDialogState.title}
+                message={bulkDialogState.message}
+                confirmText="Unpublish All"
                 cancelText="Cancel"
                 type="unpublish"
             />

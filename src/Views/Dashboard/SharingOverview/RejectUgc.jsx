@@ -234,22 +234,22 @@ const RejectUgc = ({ rejected_data, loading, onRefresh }) => {
     }
 
     const rejectedColumns = [
-        {
-            key: "select",
-            label: "",
-            render: (row) => (
-                <Checkbox
-                    checked={selectedRows.includes(row.id)}
-                    onChange={() => handleRowToggle(row.id)}
-                    sx={{
-                        color: '#FEF08A',
-                        '&.Mui-checked': {
-                            color: '#f04545',
-                        },
-                    }}
-                />
-            )
-        },
+        // {
+        //     key: "select",
+        //     label: "",
+        //     render: (row) => (
+        //         <Checkbox
+        //             checked={selectedRows.includes(row.id)}
+        //             onChange={() => handleRowToggle(row.id)}
+        //             sx={{
+        //                 color: '#FEF08A',
+        //                 '&.Mui-checked': {
+        //                     color: '#f04545',
+        //                 },
+        //             }}
+        //         />
+        //     )
+        // },
         { key: "created", label: "Created" },
         { key: "username", label: "Username" },
         { key: "phone", label: "Phone no." },
