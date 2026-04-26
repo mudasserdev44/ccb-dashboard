@@ -94,7 +94,7 @@ const AdminCouponHistory = () => {
 
   const publishCoupon = async (id) => {
     const data = {
-      couponId: id,
+      couponIds: id,
       published: true
     };
     
