@@ -298,7 +298,7 @@ const CreateAdminModal = ({ open, handleClose, editingUser, onSuccess }) => {
                     value={formData.email}
                     onChange={handleInputChange}
                     variant="outlined"
-                    disabled={loading || editingUser} // Disable email editing
+                    disabled={loading || !!editingUser} // Disable email editing
                     required
                     sx={{
                         mb: 3,
@@ -308,15 +308,19 @@ const CreateAdminModal = ({ open, handleClose, editingUser, onSuccess }) => {
                             "& fieldset": { borderColor: "#333333" },
                             "&:hover fieldset": { borderColor: "#555555" },
                             "&.Mui-focused fieldset": { borderColor: "#2E7D32" },
-                            "&.Mui-disabled": {
-                                color: "white",
-                                "-webkit-text-fill-color": "white",
+                            "&.Mui-disabled fieldset": {
+                                borderColor: "#333333 !important",
                             },
+                        },
+                        "& .MuiInputBase-input.Mui-disabled": {
+                            "-webkit-text-fill-color": "#CFCFCF",
+                            color: "#CFCFCF",
                         },
                         "& .MuiInputLabel-root": {
                             color: "#999",
                             fontFamily: "Montserrat, sans-serif",
                             "&.Mui-focused": { color: "white" },
+                            "&.Mui-disabled": { color: "#999 !important" },
                         },
                     }}
                 />

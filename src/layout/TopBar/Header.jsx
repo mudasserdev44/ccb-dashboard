@@ -106,7 +106,7 @@ const Header = () => {
           height: "70px",
         }}
       >
-        <Paper
+        {/* <Paper
           component="form"
           sx={{
             p: "2px 4px",
@@ -126,9 +126,9 @@ const Header = () => {
             sx={{ ml: 1, flex: 1, color: "rgba(255, 255, 255, 0.7)" }}
             placeholder="Search"
           />
-        </Paper>
+        </Paper> */}
 
-        <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Box sx={{ display: "flex", alignItems: "center", ml:"auto" }}>
           <Tooltip title="Notifications">
             <IconButton
               sx={{ color: "rgba(255, 255, 255, 0.7)" }}
