@@ -81,7 +81,7 @@ const DefaultCoupons = ({ default_data, loading, mutate }) => {
                 category: item.category?.name || "N/A",
                 title: item.title,
                 description: item.description,
-                source: item.source || "Admin",
+                source: item.createdType || "Admin",
                 uses: item.usageCount || 0,
             }));
             setData(formatted);

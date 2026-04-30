@@ -208,7 +208,7 @@ const AdminCouponHistory = () => {
         const isDisabled = isLoading || Object.keys(loadingCoupons).some(key => loadingCoupons[key]);
 
         return (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
             <Tooltip title={isDisabled ? "Processing..." : "Publish Coupon"} placement="top">
               <span>
                 <IconButton

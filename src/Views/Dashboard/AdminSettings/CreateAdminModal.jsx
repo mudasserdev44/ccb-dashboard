@@ -136,7 +136,8 @@ const CreateAdminModal = ({ open, handleClose, editingUser, onSuccess }) => {
             handleClose();
         } catch (err) {
             console.error(err);
-            const errorMessage = err?.response?.data?.message || 
+            console.log(err)
+            const errorMessage = err?.response?.data?.message || err?.response?.data?.error || 
                                 (editingUser ? 'Failed to update user' : 'Failed to create user');
             toast.error(errorMessage);
         } finally {

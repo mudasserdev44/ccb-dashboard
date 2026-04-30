@@ -129,8 +129,8 @@ const CreateAdminCoupons = () => {
     } else if (couponTitle.trim().length < 10) {
       newErrors.title = 'Title must be at least 10 characters';
       isValid = false;
-    } else if (couponTitle.trim().length > 60) {
-      newErrors.title = 'Title cannot exceed 60 characters';
+    } else if (couponTitle.trim().length > 10) {
+      newErrors.title = 'Title cannot exceed 10 characters';
       isValid = false;
     }
 
@@ -362,8 +362,8 @@ const CreateAdminCoupons = () => {
             setErrors(prev => ({ ...prev, title: '' }));
           }
         }}
-        inputProps={{ maxLength: 60 }}
-        helperText={errors.title || `${couponTitle.length}/60 characters`}
+        inputProps={{ maxLength: 10 }}
+        helperText={errors.title || `${couponTitle.length}/10 characters`}
         error={!!errors.title}
         sx={{ mb: 3, mt: 2 }}
       />
