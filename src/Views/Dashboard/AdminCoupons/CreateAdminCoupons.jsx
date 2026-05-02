@@ -129,8 +129,8 @@ const CreateAdminCoupons = () => {
     } else if (couponTitle.trim().length < 10) {
       newErrors.title = 'Title must be at least 10 characters';
       isValid = false;
-    } else if (couponTitle.trim().length > 10) {
-      newErrors.title = 'Title cannot exceed 10 characters';
+    } else if (couponTitle.trim().length > 60) {
+      newErrors.title = 'Title cannot exceed 60 characters';
       isValid = false;
     }
 
@@ -138,11 +138,11 @@ const CreateAdminCoupons = () => {
     if (!couponDescription.trim()) {
       newErrors.description = 'Description is required';
       isValid = false;
-    } else if (couponDescription.trim().length < 20) {
-      newErrors.description = 'Description must be at least 20 characters';
+    } else if (couponDescription.trim().length < 10) {
+      newErrors.description = 'Description must be at least 10 characters';
       isValid = false;
-    } else if (couponDescription.trim().length > 160) {
-      newErrors.description = 'Description cannot exceed 160 characters';
+    } else if (couponDescription.trim().length > 60) {
+      newErrors.description = 'Description cannot exceed 60 characters';
       isValid = false;
     }
 
@@ -362,8 +362,8 @@ const CreateAdminCoupons = () => {
             setErrors(prev => ({ ...prev, title: '' }));
           }
         }}
-        inputProps={{ maxLength: 10 }}
-        helperText={errors.title || `${couponTitle.length}/10 characters`}
+        inputProps={{ maxLength: 60 }}
+        helperText={errors.title || `${couponTitle.length}/60 characters`}
         error={!!errors.title}
         sx={{ mb: 3, mt: 2 }}
       />
@@ -382,8 +382,8 @@ const CreateAdminCoupons = () => {
             setErrors(prev => ({ ...prev, description: '' }));
           }
         }}
-        inputProps={{ maxLength: 160 }}
-        helperText={errors.description || `${couponDescription.length}/160 characters`}
+        inputProps={{ maxLength:60 }}
+        helperText={errors.description || `${couponDescription.length}/60 characters`}
         error={!!errors.description}
         sx={{ mb: 3 }}
       />

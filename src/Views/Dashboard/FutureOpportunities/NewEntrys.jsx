@@ -22,7 +22,7 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
     const token = useSelector((state) => state.admin.token);
     const [activeTab, setActiveTab] = useState("Strategic Partnership");
     const [loading, setLoading] = useState(false);
-    
+
     // Form States
     const [formData, setFormData] = useState({
         title: "",
@@ -32,20 +32,30 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
         poc: "",
         misc: ""
     });
-    
+
     const [file, setFile] = useState(null);
     const [fileName, setFileName] = useState("");
-    
+    const [filePreviewUrl, setFilePreviewUrl] = useState(""); // ✅ NEW: for image preview
+    const [existingFileUrl, setExistingFileUrl] = useState(""); // ✅ NEW: for edit mode existing file
+
     const fileInputRef = useRef(null);
     const dateRef = useRef(null);
     const reminderRef = useRef(null);
+
+    // ✅ Cleanup object URL on unmount to avoid memory leaks
+    useEffect(() => {
+        return () => {
+            if (filePreviewUrl && filePreviewUrl.startsWith("blob:")) {
+                URL.revokeObjectURL(filePreviewUrl);
+            }
+        };
+    }, [filePreviewUrl]);
 
     // ✅ Load initial data when in edit mode
     useEffect(() => {
         if (editMode && initialData) {
             setActiveTab(initialData.category || "Strategic Partnership");
-            
-            // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
+
             const formatDateForInput = (dateString) => {
                 if (!dateString) return "";
                 const date = new Date(dateString);
@@ -61,9 +71,11 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                 misc: initialData.misc?.ideas?.join(", ") || ""
             });
 
-            // If there are existing files, show the first one
+            // ✅ Store existing file URL for preview
             if (initialData.files && initialData.files.length > 0) {
-                setFileName(initialData.files[0].split('/').pop() || "Existing file");
+                const existingPath = initialData.files[0];
+                setFileName(existingPath.split('/').pop() || "Existing file");
+                setExistingFileUrl(existingPath); // store for preview
             }
         }
     }, [editMode, initialData]);
@@ -80,13 +92,48 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                 toast.error("File size should be less than 5MB");
                 return;
             }
+
+            // ✅ Revoke previous blob URL before creating new one
+            if (filePreviewUrl && filePreviewUrl.startsWith("blob:")) {
+                URL.revokeObjectURL(filePreviewUrl);
+            }
+
             setFile(selectedFile);
             setFileName(selectedFile.name);
+
+            // ✅ Create preview URL only for image files
+            if (selectedFile.type.startsWith("image/")) {
+                const previewUrl = URL.createObjectURL(selectedFile);
+                setFilePreviewUrl(previewUrl);
+            } else {
+                setFilePreviewUrl(""); // not an image, no preview
+            }
+
+            // ✅ Clear existing file preview when new file is selected
+            setExistingFileUrl("");
         }
     };
 
+    // ✅ Helper: check if a URL/path is an image
+    const isImageFile = (filePath) => {
+        if (!filePath) return false;
+        const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"];
+        const lowerPath = filePath.toLowerCase();
+        return imageExtensions.some(ext => lowerPath.endsWith(ext));
+    };
+
+    const handleRemoveFile = () => {
+        if (filePreviewUrl && filePreviewUrl.startsWith("blob:")) {
+            URL.revokeObjectURL(filePreviewUrl);
+        }
+        setFile(null);
+        setFileName("");
+        setFilePreviewUrl("");
+        setExistingFileUrl("");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
     const handleSubmit = async () => {
-        // Validation
         if (!formData.title || !formData.description) {
             toast.error("Title and Description are required");
             return;
@@ -95,7 +142,6 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
         setLoading(true);
 
         try {
-            // ✅ Prepare payload
             const payload = {
                 category: activeTab,
                 title: formData.title,
@@ -107,18 +153,15 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                 }
             };
 
-            // ✅ If editing, use PUT/PATCH request
             if (editMode && opportunityId) {
                 await request({
-                    method: "put", // or "patch" depending on your API
+                    method: "put",
                     url: `dashboard/future-opportunities/${opportunityId}`,
                     data: payload,
                 }, false, token);
 
                 toast.success("Entry updated successfully!");
-            } 
-            // ✅ If creating new, use POST request
-            else {
+            } else {
                 await request({
                     method: "post",
                     url: "dashboard/future-opportunities",
@@ -128,22 +171,23 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                 toast.success("Entry added successfully!");
             }
 
-            // Reset Form (only if not in edit mode)
             if (!editMode) {
-                setFormData({ 
-                    title: "", 
-                    date: "", 
-                    reminder: "", 
-                    description: "", 
-                    poc: "", 
-                    misc: "" 
+                setFormData({
+                    title: "",
+                    date: "",
+                    reminder: "",
+                    description: "",
+                    poc: "",
+                    misc: ""
                 });
                 setFileName("");
                 setFile(null);
+                setFilePreviewUrl("");
+                setExistingFileUrl("");
             }
-            
+
             if (onSuccess) onSuccess();
-            
+
         } catch (err) {
             console.error(err);
             toast.error(err?.response?.data?.message || `Failed to ${editMode ? 'update' : 'add'} entry`);
@@ -152,22 +196,26 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
         }
     };
 
+    // ✅ Determine what to show in the preview area
+    const previewImageUrl = filePreviewUrl || (isImageFile(existingFileUrl) ? existingFileUrl : "");
+    const hasNonImageFile = fileName && !previewImageUrl;
+
     return (
         <div className="grid grid-cols-12 gap-4 text-white">
             {/* Left Side (Form Section) */}
             <div className="col-span-8 bg-black rounded-xl border border-[#87888C]" style={{ padding: "24px 44px", zIndex: 20, fontFamily: 'Montserrat, sans-serif' }}>
-                
-                <div style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center", 
-                    backgroundColor: tabs.find((t) => t.name === activeTab)?.color, 
-                    color: "black", 
-                    fontWeight: "bold", 
-                    padding: "10px 20px", 
-                    borderRadius: "5px", 
-                    marginBottom: "20px", 
-                    width: "100%" 
+
+                <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: tabs.find((t) => t.name === activeTab)?.color,
+                    color: "black",
+                    fontWeight: "bold",
+                    padding: "10px 20px",
+                    borderRadius: "5px",
+                    marginBottom: "20px",
+                    width: "100%"
                 }}>
                     {activeTab}
                 </div>
@@ -183,13 +231,13 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                             onChange={handleInputChange}
                             placeholder="Project 1"
                             maxLength={60}
-                            style={{ 
-                                width: "100%", 
-                                padding: "12px 10px", 
-                                borderRadius: "6px", 
-                                border: "1px solid #444", 
-                                color: "white", 
-                                backgroundColor: "transparent" 
+                            style={{
+                                width: "100%",
+                                padding: "12px 10px",
+                                borderRadius: "6px",
+                                border: "1px solid #444",
+                                color: "white",
+                                backgroundColor: "transparent"
                             }}
                         />
                         <small style={{ fontSize: "12px", color: "#aaa" }}>
@@ -197,7 +245,7 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                         </small>
                     </div>
 
-                    {/* Date (Read-only in edit mode) */}
+                    {/* Date */}
                     <div style={{ position: "relative" }}>
                         <label style={{ display: "block", marginBottom: "5px" }}>Date Created</label>
                         <input
@@ -206,23 +254,23 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                             value={formData.date}
                             onChange={handleInputChange}
                             ref={dateRef}
-                            disabled={editMode} // ✅ Can't change creation date
-                            style={{ 
-                                width: "100%", 
-                                padding: "12px 40px 12px 10px", 
-                                borderRadius: "6px", 
-                                border: "1px solid #444", 
-                                color: "white", 
+                            disabled={editMode}
+                            style={{
+                                width: "100%",
+                                padding: "12px 40px 12px 10px",
+                                borderRadius: "6px",
+                                border: "1px solid #444",
+                                color: "white",
                                 backgroundColor: editMode ? "#1a1a1a" : "transparent",
                                 outline: "none",
                                 cursor: editMode ? "not-allowed" : "text"
                             }}
                         />
                         {!editMode && (
-                            <CalendarDays 
-                                onClick={() => dateRef.current.showPicker()} 
-                                size={20} 
-                                className="absolute right-3 top-10 cursor-pointer" 
+                            <CalendarDays
+                                onClick={() => dateRef.current.showPicker()}
+                                size={20}
+                                className="absolute right-3 top-10 cursor-pointer"
                             />
                         )}
                     </div>
@@ -236,20 +284,20 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                             value={formData.reminder}
                             onChange={handleInputChange}
                             ref={reminderRef}
-                            style={{ 
-                                width: "100%", 
-                                padding: "12px 40px 12px 10px", 
-                                borderRadius: "6px", 
-                                border: "1px solid #444", 
-                                color: "white", 
-                                backgroundColor: "transparent", 
-                                outline: "none" 
+                            style={{
+                                width: "100%",
+                                padding: "12px 40px 12px 10px",
+                                borderRadius: "6px",
+                                border: "1px solid #444",
+                                color: "white",
+                                backgroundColor: "transparent",
+                                outline: "none"
                             }}
                         />
-                        <CalendarDays 
-                            onClick={() => reminderRef.current.showPicker()} 
-                            size={20} 
-                            className="absolute right-3 top-10 cursor-pointer" 
+                        <CalendarDays
+                            onClick={() => reminderRef.current.showPicker()}
+                            size={20}
+                            className="absolute right-3 top-10 cursor-pointer"
                         />
                     </div>
                 </div>
@@ -264,13 +312,13 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                         placeholder="Enter project details..."
                         rows="4"
                         maxLength={500}
-                        style={{ 
-                            width: "100%", 
-                            padding: "8px", 
-                            borderRadius: "6px", 
-                            border: "1px solid #444", 
-                            color: "white", 
-                            backgroundColor: "transparent" 
+                        style={{
+                            width: "100%",
+                            padding: "8px",
+                            borderRadius: "6px",
+                            border: "1px solid #444",
+                            color: "white",
+                            backgroundColor: "transparent"
                         }}
                     ></textarea>
                     <small style={{ display: "block", fontSize: "12px", color: "#aaa" }}>
@@ -283,29 +331,129 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                     <label style={{ display: "block", marginBottom: "5px" }}>
                         Attach a file (optional)
                     </label>
-                    <div 
-                        onClick={() => fileInputRef.current.click()} 
-                        style={{ 
-                            width: "100%", 
-                            padding: "20px", 
-                            borderRadius: "6px", 
-                            border: "1px dashed #444", 
-                            backgroundColor: "#222", 
-                            textAlign: "center", 
-                            cursor: "pointer", 
-                            color: "white" 
-                        }}
-                    >
-                        <FaPlus className="mx-auto mb-2" /> 
-                        {fileName || "Choose a file or drag and drop here"}
-                        <br />
-                        <span style={{ fontSize: "12px" }}>Size limit: 5 MB</span>
-                    </div>
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        style={{ display: "none" }} 
-                        onChange={handleFileChange} 
+
+                    {/* ✅ Show image preview if available */}
+                    {previewImageUrl && (
+                        <div style={{ marginBottom: "10px", position: "relative", display: "inline-block" }}>
+                            <img
+                                src={previewImageUrl}
+                                alt="File preview"
+                                style={{
+                                    maxWidth: "100%",
+                                    maxHeight: "200px",
+                                    borderRadius: "8px",
+                                    border: "1px solid #444",
+                                    objectFit: "contain",
+                                    display: "block"
+                                }}
+                            />
+                            {/* ✅ Remove button on top of image */}
+                            <button
+                                onClick={handleRemoveFile}
+                                style={{
+                                    position: "absolute",
+                                    top: "6px",
+                                    right: "6px",
+                                    backgroundColor: "rgba(0,0,0,0.7)",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "50%",
+                                    width: "24px",
+                                    height: "24px",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    lineHeight: 1
+                                }}
+                                title="Remove file"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    )}
+
+                    {/* ✅ Show non-image file name badge */}
+                    {hasNonImageFile && (
+                        <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            marginBottom: "10px",
+                            backgroundColor: "#1a1a1a",
+                            border: "1px solid #444",
+                            borderRadius: "6px",
+                            padding: "8px 12px"
+                        }}>
+                            <span style={{ fontSize: "20px" }}>📄</span>
+                            <span style={{ fontSize: "13px", color: "#ccc", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {fileName}
+                            </span>
+                            <button
+                                onClick={handleRemoveFile}
+                                style={{
+                                    backgroundColor: "transparent",
+                                    color: "#aaa",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontSize: "18px",
+                                    lineHeight: 1,
+                                    padding: "0 4px"
+                                }}
+                                title="Remove file"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    )}
+
+                    {/* ✅ Upload area — hide when file already selected */}
+                    {!fileName && (
+                        <div
+                            onClick={() => fileInputRef.current.click()}
+                            style={{
+                                width: "100%",
+                                padding: "20px",
+                                borderRadius: "6px",
+                                border: "1px dashed #444",
+                                backgroundColor: "#222",
+                                textAlign: "center",
+                                cursor: "pointer",
+                                color: "white"
+                            }}
+                        >
+                            <FaPlus className="mx-auto mb-2" />
+                            Choose a file or drag and drop here
+                            <br />
+                            <span style={{ fontSize: "12px" }}>Size limit: 5 MB</span>
+                        </div>
+                    )}
+
+                    {/* ✅ "Change file" link when a file is already selected */}
+                    {fileName && (
+                        <button
+                            onClick={() => fileInputRef.current.click()}
+                            style={{
+                                background: "none",
+                                border: "none",
+                                color: "#aaa",
+                                fontSize: "12px",
+                                cursor: "pointer",
+                                marginTop: "4px",
+                                textDecoration: "underline",
+                                padding: 0
+                            }}
+                        >
+                            Change file
+                        </button>
+                    )}
+
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: "none" }}
+                        onChange={handleFileChange}
                     />
                 </div>
 
@@ -320,13 +468,13 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                         value={formData.poc}
                         onChange={handleInputChange}
                         placeholder="john@example.com, jane@example.com"
-                        style={{ 
-                            width: "100%", 
-                            padding: "8px", 
-                            borderRadius: "6px", 
-                            border: "1px solid #444", 
-                            color: "white", 
-                            backgroundColor: "transparent" 
+                        style={{
+                            width: "100%",
+                            padding: "8px",
+                            borderRadius: "6px",
+                            border: "1px solid #444",
+                            color: "white",
+                            backgroundColor: "transparent"
                         }}
                     />
                 </div>
@@ -342,13 +490,13 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                         value={formData.misc}
                         onChange={handleInputChange}
                         placeholder="Idea 1, Idea 2, Idea 3"
-                        style={{ 
-                            width: "100%", 
-                            padding: "8px", 
-                            borderRadius: "6px", 
-                            border: "1px solid #444", 
-                            color: "white", 
-                            backgroundColor: "transparent" 
+                        style={{
+                            width: "100%",
+                            padding: "8px",
+                            borderRadius: "6px",
+                            border: "1px solid #444",
+                            color: "white",
+                            backgroundColor: "transparent"
                         }}
                     />
                 </div>
@@ -357,14 +505,14 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        style={{ 
-                            backgroundColor: loading ? "#555" : "#15803D", 
-                            padding: "10px 40px", 
-                            borderRadius: "7px", 
-                            color: "white", 
-                            fontWeight: "bold", 
-                            marginTop: "10px", 
-                            cursor: loading ? "not-allowed" : "pointer" 
+                        style={{
+                            backgroundColor: loading ? "#555" : "#15803D",
+                            padding: "10px 40px",
+                            borderRadius: "7px",
+                            color: "white",
+                            fontWeight: "bold",
+                            marginTop: "10px",
+                            cursor: loading ? "not-allowed" : "pointer"
                         }}
                     >
                         {loading ? (
@@ -383,17 +531,17 @@ const NewEntrys = ({ onSuccess, editMode = false, opportunityId = null, initialD
                         key={index}
                         onClick={() => setActiveTab(tab.name)}
                         style={{
-                            padding: "15px", 
-                            marginTop: "20px", 
-                            width: "100%", 
-                            position: "relative", 
-                            left: -30, 
-                            textAlign: "right", 
-                            fontWeight: "bold", 
-                            borderRadius: "6px", 
+                            padding: "15px",
+                            marginTop: "20px",
+                            width: "100%",
+                            position: "relative",
+                            left: -30,
+                            textAlign: "right",
+                            fontWeight: "bold",
+                            borderRadius: "6px",
                             fontSize: "16px",
-                            backgroundColor: tab.color, 
-                            color: "black", 
+                            backgroundColor: tab.color,
+                            color: "black",
                             opacity: activeTab === tab.name ? 1 : 0.6,
                             border: activeTab === tab.name ? "2px solid white" : "none",
                             zIndex: activeTab === tab.name ? 30 : 1

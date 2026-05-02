@@ -8,6 +8,7 @@ import CustomCardRevenue from '../../../components/CustomCardRevenue/CustomCardR
 import { request } from '../../../services/axios';
 import { useSelector } from 'react-redux';
 import SocialMediaStats from '../../../components/SocialMediaStats';
+import ToastComp from '../../../components/toast/ToastComp';
 
 // ─── Rewarded Dropdown Cell ───────────────────────────────────────────────────
 // This component handles the yes/no dropdown per row.
@@ -56,7 +57,11 @@ const RewardedDropdown = ({ row, token, onUpdate }) => {
                 onUpdate(row._id || row.id || row.userId, newValue);
             }
         } catch (err) {
-            console.error("Failed to update reward status:", err);
+            ToastComp({
+                variant:'info',
+                message:err?.response?.data?.message || "Failed To update"
+            })
+            // console.log("++++++++++++++++++",  err);
             // Revert on failure
             setValue(prevValue);
         } finally {
