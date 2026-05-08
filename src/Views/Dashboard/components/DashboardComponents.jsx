@@ -519,14 +519,14 @@ const USMap = ({
 
       </div>
 
-      <div className="flex justify-center gap-6 text-white text-xs mt-4">
-        {[1, 2, 3, 4, 5].map((level) => (
-          <div key={level} className="flex gap-2 items-center">
-            <span>{level}</span>
-            <div style={{ backgroundColor: colorScale(level), width: 12, height: 12 }} />
-          </div>
-        ))}
-      </div>
+      <div className="flex justify-center gap-4 text-white text-xs mt-4 flex-wrap">
+  {[0, 1.25, 2.5, 3.75, 5, 6.25, 7.5, 8.75, 10].map((val, i) => (
+    <div key={i} className="flex gap-1 items-center">
+      <div style={{ backgroundColor: colorScale(val), width: 14, height: 14, borderRadius: 2 }} />
+      <span>{Math.round(val)}</span>
+    </div>
+  ))}
+</div>
     </div>
   );
 };

@@ -11,7 +11,7 @@ import {
   IconButton,
   Pagination,
   styled,
-  Checkbox, // Checkbox को आयात किया गया
+  Checkbox,
   Tooltip,
   CircularProgress,
 } from "@mui/material";
@@ -24,19 +24,21 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 const DarkTableContainer = styled(TableContainer)(() => ({
   backgroundColor: "#171717",
   boxShadow: "none",
-  borderRadius: "4px",
+  borderRadius: "6px",
+  overflow: "hidden",
+  border: "1px solid #444",
 }));
 
 const getBorderColor = (rowId, selectedRows) => {
-  return selectedRows.includes(rowId) ? '#16A34A' : '#444'; 
-}
+  return selectedRows.includes(rowId) ? '#16A34A' : '#444';
+};
 
 const DarkBodyTableCell = styled(TableCell, {
-    shouldForwardProp: (prop) => prop !== 'rowId' && prop !== 'selectedRows'
+  shouldForwardProp: (prop) => prop !== 'rowId' && prop !== 'selectedRows'
 })(({ rowId, selectedRows }) => ({
   color: "#FEF08A",
   backgroundColor: "transparent",
-  border: `1px solid ${getBorderColor(rowId, selectedRows)}`, 
+  border: `1px solid ${getBorderColor(rowId, selectedRows)}`,
   padding: "14px 8px",
   fontSize: "0.9rem",
 }));
@@ -53,6 +55,19 @@ const LightHeaderTableCell = styled(TableCell)(() => ({
 const DarkTableRow = styled(TableRow)(() => ({
   "&:hover": {
     backgroundColor: "#2e2e2e",
+  },
+  // Round corners on first and last cells of first/last rows
+  "&:first-of-type td:first-of-type": {
+    borderTopLeftRadius: "8px",
+  },
+  "&:first-of-type td:last-of-type": {
+    borderTopRightRadius: "8px",
+  },
+  "&:last-of-type td:first-of-type": {
+    borderBottomLeftRadius: "8px",
+  },
+  "&:last-of-type td:last-of-type": {
+    borderBottomRightRadius: "8px",
   },
 }));
 
@@ -91,7 +106,6 @@ const CustomTable = ({ columns, data, rowsPerPage = 5, getRowColor = () => '', s
   const isAllSelected = currentPageIds.length > 0 && numSelected === currentPageIds.length;
   const isIndeterminate = numSelected > 0 && numSelected < currentPageIds.length;
 
-
   return (
     <Box sx={{ fontFamily: 'Montserrat, sans-serif' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -111,92 +125,111 @@ const CustomTable = ({ columns, data, rowsPerPage = 5, getRowColor = () => '', s
           </span>
         </Tooltip>
       </Box>
+
       <DarkTableContainer component={Paper} sx={{ fontFamily: 'Montserrat, sans-serif' }}>
-          <Table sx={{ minWidth: 650, fontFamily: 'Montserrat, sans-serif' }} aria-label="custom styled table ">
-            <TableHead>
-              <TableRow>
-                {columns.map((col, index) => (
-                  <LightHeaderTableCell
-                    key={index}
-                    align="center"
-                    sx={{ fontFamily: 'Montserrat, sans-serif', textAlign: "center" }}
-                  >
-                    {col.key === "select" ? ( 
-                      <Checkbox
-                          checked={isAllSelected}
-                          indeterminate={isIndeterminate}
-                          onChange={() => onSelectAll(currentPageIds, isAllSelected)} 
-                          sx={{
-                              color: 'black',
-                              '&.Mui-checked': {
-                                  color: 'black',
-                              },
-                              '&.Mui-indeterminate': {
-                                  color: 'black',
-                              },
-                          }}
-                      />
-                    ) : (
-                      col.label
-                    )}
-                  </LightHeaderTableCell>
-                ))}
-              </TableRow>
-            </TableHead>
+        <Table
+          sx={{
+            minWidth: 650,
+            fontFamily: 'Montserrat, sans-serif',
+            borderCollapse: "separate",
+            borderSpacing: 0,
+          }}
+          aria-label="custom styled table"
+        >
+          <TableHead>
+            <TableRow>
+              {columns.map((col, index) => (
+                <LightHeaderTableCell
+                  key={index}
+                  align="center"
+                  sx={{
+                    fontFamily: 'Montserrat, sans-serif',
+                    textAlign: "center",
+                    // Round top-left and top-right corners of the header
+                    ...(index === 0 && { borderTopLeftRadius: "5px" }),
+                    ...(index === columns.length - 1 && { borderTopRightRadius: "5px" }),
+                  }}
+                >
+                  {col.key === "select" ? (
+                    <Checkbox
+                      checked={isAllSelected}
+                      indeterminate={isIndeterminate}
+                      onChange={() => onSelectAll(currentPageIds, isAllSelected)}
+                      sx={{
+                        color: 'black',
+                        '&.Mui-checked': { color: 'black' },
+                        '&.Mui-indeterminate': { color: 'black' },
+                      }}
+                    />
+                  ) : (
+                    col.label
+                  )}
+                </LightHeaderTableCell>
+              ))}
+            </TableRow>
+          </TableHead>
 
-            <TableBody>
-              {displayData.map((row, i) => {
-                const rowId = row.id;
+          <TableBody>
+            {displayData.map((row, i) => {
+              const rowId = row.id;
+              const isLastRow = i === displayData.length - 1;
 
-                return (
-                  <DarkTableRow key={i} sx={{ backgroundColor: getRowColor(row) }}>
-                    {columns.map((col, j) => (
-                      <DarkBodyTableCell
-                        key={j}
-                        align="center"
-                        rowId={rowId} 
-                        selectedRows={selectedRows} 
-                        sx={{ fontFamily: 'Montserrat, sans-serif', textAlign: "center", fontWeight: "600" }}
-                      >
-                        {col.render ? (
-                          col.render(row)
-                        ) : col.key === "growth" ? (
-                          <Box display="flex" flexDirection="column" alignItems="center">
-                            {typeof row[col.key] === "string" && row[col.key].includes("up") && (
-                              <ArrowUpwardIcon style={{ color: "yellow" }} />
-                            )}
-                            {typeof row[col.key] === "string" && row[col.key].includes("down") && (
-                              <ArrowDownwardIcon style={{ color: "red" }} />
-                            )}
-                            {typeof row[col.key] === "string" && row[col.key].includes("left") && (
-                              <ArrowBackIcon style={{ color: "orange" }} />
-                            )}
-                            {typeof row[col.key] === "string" && row[col.key].includes("right") && (
-                              <ArrowForwardIcon style={{ color: "green" }} />
-                            )}
-                            <span className={`${col.bodycolor}`}>
-                              {typeof row[col.key] === "string"
-                                ? row[col.key]
+              return (
+                <DarkTableRow key={i} sx={{ backgroundColor: getRowColor(row) }}>
+                  {columns.map((col, j) => (
+                    <DarkBodyTableCell
+                      key={j}
+                      align="center"
+                      rowId={rowId}
+                      selectedRows={selectedRows}
+                      sx={{
+                        fontFamily: 'Montserrat, sans-serif',
+                        textAlign: "center",
+                        fontWeight: "600",
+                        // Round bottom corners of last row
+                        ...(isLastRow && j === 0 && { borderBottomLeftRadius: "5px" }),
+                        ...(isLastRow && j === columns.length - 1 && { borderBottomRightRadius: "5px" }),
+                      }}
+                    >
+                      {col.render ? (
+                        col.render(row)
+                      ) : col.key === "growth" ? (
+                        <Box display="flex" flexDirection="column" alignItems="center">
+                          {typeof row[col.key] === "string" && row[col.key].includes("up") && (
+                            <ArrowUpwardIcon style={{ color: "yellow" }} />
+                          )}
+                          {typeof row[col.key] === "string" && row[col.key].includes("down") && (
+                            <ArrowDownwardIcon style={{ color: "red" }} />
+                          )}
+                          {typeof row[col.key] === "string" && row[col.key].includes("left") && (
+                            <ArrowBackIcon style={{ color: "orange" }} />
+                          )}
+                          {typeof row[col.key] === "string" && row[col.key].includes("right") && (
+                            <ArrowForwardIcon style={{ color: "green" }} />
+                          )}
+                          <span className={`${col.bodycolor}`}>
+                            {typeof row[col.key] === "string"
+                              ? row[col.key]
                                   .replace("up", "")
                                   .replace("down", "")
                                   .replace("left", "")
                                   .replace("right", "")
                                   .trim()
-                                : row[col.key]}
-                            </span>
-                          </Box>
-                        ) : (
-                          <span className={`${col.bodycolor}`}>
-                            {row[col.key]}
+                              : row[col.key]}
                           </span>
-                        )}
-                      </DarkBodyTableCell>
-                    ))}
-                  </DarkTableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                        </Box>
+                      ) : (
+                        <span className={`${col.bodycolor}`}>
+                          {row[col.key]}
+                        </span>
+                      )}
+                    </DarkBodyTableCell>
+                  ))}
+                </DarkTableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </DarkTableContainer>
 
       {rowsPerPage < data.length && (
@@ -218,9 +251,7 @@ const CustomTable = ({ columns, data, rowsPerPage = 5, getRowColor = () => '', s
             boundaryCount={1}
             color="primary"
             sx={{
-              "& .MuiPagination-ul": {
-                gap: "6px",
-              },
+              "& .MuiPagination-ul": { gap: "6px" },
               "& .MuiPaginationItem-root": {
                 color: "#aaa",
                 border: "1px solid #333",
@@ -230,12 +261,8 @@ const CustomTable = ({ columns, data, rowsPerPage = 5, getRowColor = () => '', s
                 height: "36px",
                 minWidth: "36px",
                 fontWeight: 500,
-                "&:hover": {
-                  backgroundColor: "#222",
-                  borderColor: "#555",
-                },
+                "&:hover": { backgroundColor: "#222", borderColor: "#555" },
               },
-
               "& .MuiPaginationItem-previousNext": {
                 color: "#aaa",
                 backgroundColor: "#0f0f0f",
@@ -244,15 +271,9 @@ const CustomTable = ({ columns, data, rowsPerPage = 5, getRowColor = () => '', s
                 width: "36px",
                 height: "36px",
                 minWidth: "36px",
-                "&:hover": {
-                  backgroundColor: "#222",
-                  borderColor: "#555",
-                },
-                "& .MuiSvgIcon-root": {
-                  color: "#aaa",
-                },
+                "&:hover": { backgroundColor: "#222", borderColor: "#555" },
+                "& .MuiSvgIcon-root": { color: "#aaa" },
               },
-
               "& .Mui-selected": {
                 backgroundColor: "#1a1a1a !important",
                 color: "#fff",
@@ -261,8 +282,6 @@ const CustomTable = ({ columns, data, rowsPerPage = 5, getRowColor = () => '', s
               },
             }}
           />
-
-
         </Box>
       )}
     </Box>
