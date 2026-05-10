@@ -25,7 +25,7 @@ const DarkTableContainer = styled(TableContainer)(() => ({
   backgroundColor: "#171717",
   boxShadow: "none",
   borderRadius: "6px",
-  overflow: "hidden",
+  overflowX: "auto",           // ← FIXED: was "overflow: hidden" which blocked scroll
   border: "1px solid #444",
 }));
 
@@ -56,7 +56,6 @@ const DarkTableRow = styled(TableRow)(() => ({
   "&:hover": {
     backgroundColor: "#2e2e2e",
   },
-  // Round corners on first and last cells of first/last rows
   "&:first-of-type td:first-of-type": {
     borderTopLeftRadius: "8px",
   },
@@ -129,7 +128,7 @@ const CustomTable = ({ columns, data, rowsPerPage = 5, getRowColor = () => '', s
       <DarkTableContainer component={Paper} sx={{ fontFamily: 'Montserrat, sans-serif' }}>
         <Table
           sx={{
-            minWidth: 650,
+            minWidth: 650,           // ← keeps columns from squishing; container scrolls instead
             fontFamily: 'Montserrat, sans-serif',
             borderCollapse: "separate",
             borderSpacing: 0,
@@ -145,7 +144,7 @@ const CustomTable = ({ columns, data, rowsPerPage = 5, getRowColor = () => '', s
                   sx={{
                     fontFamily: 'Montserrat, sans-serif',
                     textAlign: "center",
-                    // Round top-left and top-right corners of the header
+                    whiteSpace: "nowrap",  // ← prevents header text from wrapping and squishing columns
                     ...(index === 0 && { borderTopLeftRadius: "5px" }),
                     ...(index === columns.length - 1 && { borderTopRightRadius: "5px" }),
                   }}
@@ -186,7 +185,7 @@ const CustomTable = ({ columns, data, rowsPerPage = 5, getRowColor = () => '', s
                         fontFamily: 'Montserrat, sans-serif',
                         textAlign: "center",
                         fontWeight: "600",
-                        // Round bottom corners of last row
+                        whiteSpace: "nowrap",  // ← prevents cell content from wrapping and squishing columns
                         ...(isLastRow && j === 0 && { borderBottomLeftRadius: "5px" }),
                         ...(isLastRow && j === columns.length - 1 && { borderBottomRightRadius: "5px" }),
                       }}
