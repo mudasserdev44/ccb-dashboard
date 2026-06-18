@@ -57,17 +57,28 @@ const LoginScreen = () => {
           url: "auth/verifyOtp",
           data: body
         }, false)
-        dispatch({
-          type:"LOGIN_SUCCESS",
-          payload: res.data
-        })
-        setIsVerifying(false);
-        navigate("/dashboard/sales-overview")
-        ToastComp({
-          variant: "success",
-          message: "OTP verified successfully"
-        })
-        
+        // console.log(res.data.user.role, "RESPONSE DATAAAAAAAAAAAAAA")
+        const role = res.data.user.role;
+        if(role == "admin" || role == "super_admin" || role == "manager" || role == "developer") {
+
+          dispatch({
+            type:"LOGIN_SUCCESS",
+            payload: res.data
+          })
+          setIsVerifying(false);
+          navigate("/dashboard/sales-overview")
+          ToastComp({
+            variant: "success",
+            message: "OTP verified successfully"
+          })
+        }else {
+          setIsVerifying(false)
+          ToastComp({
+            variant: "error",
+            message: "You are not allowed to login"
+          })
+        }
+          
       }
       catch (err) {
         console.log(err)

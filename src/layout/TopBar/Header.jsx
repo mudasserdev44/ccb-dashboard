@@ -43,7 +43,7 @@ const Header = () => {
         false,
         token
       );
-      setNotifications(res.data || []);
+      setNotifications(res.data.notifications || []);
     } catch (err) {
       console.error(err);
     } finally {
