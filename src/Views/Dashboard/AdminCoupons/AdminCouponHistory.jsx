@@ -115,57 +115,60 @@ const AdminCouponHistory = () => {
     }
   };
 
-  const handleDialogConfirm = async () => {
-    const { type, couponId } = dialogState;
+  const deleteCoupon = async (id) => {
+  const res = await request({
+    url: "/coupons/deleteRejected",
+    method: "delete",
+    data: { couponId: [id] }
+  }, false, token);
+  return res;
+};
 
-    console.log("Coupon ID:", couponId);
-    console.log("Action:", type === "delete" ? "Deleted" : "Published");
+const handleDialogConfirm = async () => {
+  const { type, couponId } = dialogState;
 
-    // Set loading state for this specific coupon
-    setLoadingCoupons(prev => ({
-      ...prev,
-      [couponId]: true
-    }));
+  setLoadingCoupons(prev => ({ ...prev, [couponId]: true }));
+  handleDialogClose();
 
-    handleDialogClose();
+  if (type === 'delete') {
+    setLocalChanges(prev => ({ ...prev, [couponId]: 'Deleted' }));
 
-    if (type === 'delete') {
-      setLocalChanges(prev => ({
-        ...prev,
-        [couponId]: 'Deleted'
-      }));
-      
-      // Remove loading state
-      setLoadingCoupons(prev => ({
-        ...prev,
-        [couponId]: false
-      }));
-    } else if (type === 'publish') {
-  setLocalChanges(prev => ({
-    ...prev,
-    [couponId]: 'Moved to Default Coupons'
-  }));
+    try {
+      await deleteCoupon(couponId);
+      ToastComp({ message: "Coupon Deleted", variant: "success" });
+      mutate();
+    } catch (error) {
+      console.error("Delete failed:", error);
+      // Rollback
+      setLocalChanges(prev => {
+        const updated = { ...prev };
+        delete updated[couponId];
+        return updated;
+      });
+      ToastComp({ message: "Delete failed. Please try again.", variant: "error" });
+    } finally {
+      setLoadingCoupons(prev => ({ ...prev, [couponId]: false }));
+    }
 
-  try {
-    await publishCoupon(couponId);
+  } else if (type === 'publish') {
+    setLocalChanges(prev => ({ ...prev, [couponId]: 'Moved to Default Coupons' }));
 
-    mutate();
-  } catch (error) {
-    console.error("Publish failed:", error);
-
-    setLocalChanges(prev => {
-      const updated = { ...prev };
-      delete updated[couponId]; //rollback
-      return updated;
-    });
-  } finally {
-    setLoadingCoupons(prev => ({
-      ...prev,
-      [couponId]: false
-    }));
+    try {
+      await publishCoupon(couponId);
+      ToastComp({ message: "Coupon Published", variant: "success" });
+      mutate();
+    } catch (error) {
+      console.error("Publish failed:", error);
+      setLocalChanges(prev => {
+        const updated = { ...prev };
+        delete updated[couponId];
+        return updated;
+      });
+    } finally {
+      setLoadingCoupons(prev => ({ ...prev, [couponId]: false }));
+    }
   }
-}
-  };
+};
 
   const handleSave = async () => {
     console.log('Saving changes:', localChanges);

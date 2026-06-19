@@ -22,6 +22,7 @@ const NewUgc = ({ ugc_data, loading, onRefresh }) => {
   const [categoryFilter, setCategoryFilter] = useState('All Category');
   const [originalData, setOriginalData] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]); // Add selected rows state
   const token = useSelector((state)=>state.admin.token);
 
   // Set data when ugc_data is available
@@ -40,6 +41,7 @@ const NewUgc = ({ ugc_data, loading, onRefresh }) => {
 
       setData(formatted);
       setOriginalData(formatted); // Save original
+      setSelectedRows([]); // Reset selection when data changes
     }
   }, [ugc_data]);
 
@@ -73,15 +75,38 @@ const NewUgc = ({ ugc_data, loading, onRefresh }) => {
     setData(updatedData);
   };
 
+  // Handle row selection
+  const handleSelectAll = (currentPageIds, isAllSelected) => {
+    if (isAllSelected) {
+      // Deselect all on current page
+      setSelectedRows(prev => prev.filter(id => !currentPageIds.includes(id)));
+    } else {
+      // Select all on current page
+      const newSelected = currentPageIds.filter(id => !selectedRows.includes(id));
+      setSelectedRows(prev => [...prev, ...newSelected]);
+    }
+  };
+
+  const handleRowSelect = (rowId) => {
+    setSelectedRows(prev => 
+      prev.includes(rowId) 
+        ? prev.filter(id => id !== rowId)
+        : [...prev, rowId]
+    );
+  };
+
   const getRowColor = (status) => {
     if (status === 'Approve') return '#2E7D32';
     if (status === 'Reject') return '#D32F2F';
     return '#171717';
   };
 
-  const overviewColumns = getOverviewColumns(handleStatusChange);
+  // Modified columns to include checkbox
+  const overviewColumns = getOverviewColumns(handleStatusChange, handleRowSelect, selectedRows);
 
+  // ===== MAIN FIX: Handle Apply Changes with both single and multiple support =====
   const handleApplyChanges = async() => {
+    // Get all changed rows
     const changedRows = data.filter((item, index) => {
       return item.status !== originalData[index].status;
     });
@@ -91,29 +116,53 @@ const NewUgc = ({ ugc_data, loading, onRefresh }) => {
       return;
     }
 
-    const row = changedRows[0]; 
-    const requestData = {
-      couponId: row.id,
-      status: row?.status?.toLowerCase()
-    };
-
     setIsSubmitting(true);
 
     try {
+      // Prepare request data based on number of changes
+      let requestData;
+      let url;
+
+      if (changedRows.length === 1) {
+        // Single change - send as object
+        const row = changedRows[0];
+        requestData = {
+          couponId: row.id,
+          status: row.status?.toLowerCase()
+        };
+        url = "coupons/admin/approve";
+      } else {
+        // Multiple changes - send as array
+        requestData = changedRows.map(row => ({
+          couponId: row.id,
+          status: row.status?.toLowerCase()
+        }));
+        url = "coupons/admin/approve";
+      }
+
+      console.log('Sending request:', { url, data: requestData });
+
       const res = await request({
         method: "post",
-        url: "coupons/admin/approve",
+        url: url,
         data: requestData
       }, false, token);
 
       // Refetch the data after successful API call
       await mutate('admin/new');
 
-      // Optional: Show success message
-      console.log('Changes applied successfully');
+      // Clear selections after successful update
+      setSelectedRows([]);
+      
+      // Show success message
+      const message = changedRows.length === 1 
+        ? '1 coupon updated successfully!' 
+        : `${changedRows.length} coupons updated successfully!`;
+      alert(message);
+      
+      console.log('Changes applied successfully:', res);
     } catch(err) {
       console.error('Error applying changes:', err);
-      // Optional: Show error message to user
       alert('Failed to apply changes. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -125,6 +174,7 @@ const NewUgc = ({ ugc_data, loading, onRefresh }) => {
     setData([...originalData]);
     setSearchTerm('');
     setCategoryFilter('All Category');
+    setSelectedRows([]); // Clear selections on cancel
   };
 
   // ===== Loader State =====
@@ -196,6 +246,20 @@ const NewUgc = ({ ugc_data, loading, onRefresh }) => {
         </Box>
       </Box>
 
+      {/* Selected Rows Counter */}
+      {selectedRows.length > 0 && (
+        <Box sx={{ 
+          mb: 2, 
+          color: '#FEF08A', 
+          fontSize: '0.9rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <span>✅ {selectedRows.length} row(s) selected</span>
+        </Box>
+      )}
+
       {/* Table */}
       <Box sx={{ backgroundColor: '#171717', color: 'white' }}>
         <CustomTable
@@ -204,6 +268,9 @@ const NewUgc = ({ ugc_data, loading, onRefresh }) => {
           getRowColor={(row) => getRowColor(row.status)}
           rowsPerPage={7}
           onRefresh={onRefresh}
+          selectedRows={selectedRows}
+          onSelectAll={handleSelectAll}
+          onRowSelect={handleRowSelect}
         />
       </Box>
 

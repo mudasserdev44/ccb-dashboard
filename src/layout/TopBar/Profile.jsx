@@ -24,13 +24,9 @@ const Profile = () => {
   const user = useSelector((state) => state.admin.user);
   const token = useSelector((state) => state.admin.token);
   const [fullName, setFullName] = useState(user?.name || "");
-  const [profileImage, setProfileImage] = useState(
-    import.meta.env.VITE_BASE2 + (user?.profilePicture || "")
-  );
+  const [profileImage, setProfileImage] = useState((user?.profilePicture || ""));
   const [originalName, setOriginalName] = useState(user?.name || "");
-  const [originalImage, setOriginalImage] = useState(
-    import.meta.env.VITE_BASE2 + (user?.profilePicture || "")
-  );
+  const [originalImage, setOriginalImage] = useState((user?.profilePicture || ""));
   const [hasChanges, setHasChanges] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -82,6 +78,7 @@ const Profile = () => {
       await handleUploadProfilePic(file);
     }
   };
+  console.log(profileImage, "PROFILEEEEEEEEEEEEEE")
 
   const handleUploadProfilePic = async (file) => {
     if (!file) return;
@@ -117,11 +114,11 @@ const Profile = () => {
             profilePicture: updatedProfilePicture
           }
         });
-
+        // console.log(updatedProfilePicture, "UPLOADEDDDDDDDDDDDDDDDD")
         // Update local states
-        const fullImagePath = import.meta.env.VITE_BASE2 + updatedProfilePicture;
-        setProfileImage(fullImagePath);
-        setOriginalImage(fullImagePath);
+        // const fullImagePath = import.meta.env.VITE_BASE2 + updatedProfilePicture;
+        setProfileImage(updatedProfilePicture);
+        setOriginalImage(updatedProfilePicture);
         
         setSnackbar({
           open: true,

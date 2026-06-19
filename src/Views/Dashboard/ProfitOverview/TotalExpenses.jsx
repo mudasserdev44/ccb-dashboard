@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { request } from '../../../services/axios';
+import { useSelector } from 'react-redux';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -65,21 +67,16 @@ function DatePicker({ value, onChange }) {
 
       {open && (
         <div className="absolute top-full mt-1 left-0 z-50 bg-[#1a1a1a] border border-gray-700 rounded-xl p-3 shadow-2xl" style={{ width: 224 }}>
-          {/* Header */}
           <div className="flex justify-between items-center mb-2">
             <button onClick={prevMonth} className="text-gray-400 hover:text-white bg-transparent border-none cursor-pointer text-lg px-1">‹</button>
             <span className="text-white text-sm font-medium">{MONTHS[viewMonth]} {viewYear}</span>
             <button onClick={nextMonth} className="text-gray-400 hover:text-white bg-transparent border-none cursor-pointer text-lg px-1">›</button>
           </div>
-
-          {/* Day headers */}
           <div className="grid grid-cols-7 gap-0.5 mb-1">
             {DAYS.map((d) => (
               <div key={d} className="text-center text-xs text-gray-500 py-0.5">{d}</div>
             ))}
           </div>
-
-          {/* Day cells */}
           <div className="grid grid-cols-7 gap-0.5">
             {cells.map((d, i) => (
               <button
@@ -103,34 +100,95 @@ function DatePicker({ value, onChange }) {
   );
 }
 
+// ✅ Helper: Date object → "YYYY-MM-DD" for API
+const formatDateForAPI = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 const TotalExpenses = ({ initialExpenses }) => {
-  const [selectedDate, setSelectedDate] = useState(new Date(2025, 4, 2));
+  const token = useSelector((state) => state.admin.token);
+
+  // ✅ Default: today's date
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [field, setField] = useState('');
-  const [expense, setExpense] = useState('$');
+  const [expense, setExpense] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+    // ✅ Close dropdown on outside click
+useEffect(() => {
+  function handleOutsideClick(e) {
+    if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      setIsDropdownOpen(false);
+    }
+  }
+  document.addEventListener('mousedown', handleOutsideClick);
+  return () => document.removeEventListener('mousedown', handleOutsideClick);
+}, []);
   const [expensesList, setExpensesList] = useState([
-    { label: 'Marketing', amount: '$1,000', percentage: '57.3%', color: '#E91E63' },
-    { label: 'Apple Dev Fee', amount: '$1,200', percentage: '57.3%', color: '#FFEB3B' },
-    { label: 'Google Dev Fee', amount: '$100', percentage: '57.3%', color: '#2196F3' },
-    { label: 'Ambassador Payouts', amount: '$400', percentage: '57.3%', color: '#4CAF50' },
-    { label: 'Server and Tools', amount: '$500', percentage: '57.3%', color: '#5710e5' },
-    { label: 'Miscellaneous', amount: '$150', percentage: '57.3%', color: '#f112d3' },
+    { label: 'Marketing',          amount: '$5,000', percentage: '57.3%', color: '#E91E63' },
+    { label: 'Apple Dev Fee',       amount: '$1,200', percentage: '57.3%', color: '#FFEB3B' },
+    { label: 'Google Dev Fee',      amount: '$100',   percentage: '57.3%', color: '#2196F3' },
+    { label: 'Ambassador Payouts',  amount: '$400',   percentage: '57.3%', color: '#4CAF50' },
+    { label: 'Server and Tools',    amount: '$500',   percentage: '57.3%', color: '#5710e5' },
+    { label: 'Miscellaneous',       amount: '$150',   percentage: '57.3%', color: '#f112d3' },
   ]);
 
-  // useEffect(() => {
-  //   // if (initialExpenses && initialExpenses.length > 0) {
-  //     setExpensesList(initialExpenses);
-  //   // }
-  // }, []);
+  // ✅ Use API data if provided
+  useEffect(() => {
+    if (initialExpenses && initialExpenses.length > 0) {
+      setExpensesList(initialExpenses);
+    }
+  }, [initialExpenses]);
 
-  const handleAddEntry = () => {
-    if (field && expense && expense !== '$') {
-      setExpensesList([
-        ...expensesList,
-        { label: field, amount: expense, percentage: '0%', color: '#8884d8' },
+  const handleAddEntry = async () => {
+    // Validate
+    const amountNum = parseFloat(expense.replace(/[^0-9.]/g, ''));
+    if (!field.trim() || !expense.trim() || isNaN(amountNum)) return;
+
+    setIsSubmitting(true);
+    setSubmitError('');
+    setSubmitSuccess(false);
+
+    try {
+      // ✅ POST to API: { name, amount, date }
+      await request({
+        method: 'post',
+        url: '/dashboard/expense',
+        data: {
+          name: field.trim(),
+          amount: amountNum,
+          date: formatDateForAPI(selectedDate),  // "YYYY-MM-DD"
+        }
+      }, false, token);
+
+      // ✅ Optimistically update the local list
+      setExpensesList((prev) => [
+        ...prev,
+        {
+          label: field.trim(),
+          amount: `$${amountNum.toLocaleString()}`,
+          percentage: '0%',
+          color: '#8884d8',
+        },
       ]);
+
       setField('');
-      setExpense('$');
+      setExpense('');
+      setSubmitSuccess(true);
+      setTimeout(() => setSubmitSuccess(false), 2000);
+
+    } catch (err) {
+      console.error('Add expense error:', err);
+      setSubmitError('Failed to add expense. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -140,13 +198,7 @@ const TotalExpenses = ({ initialExpenses }) => {
         <h2 className="text-xl font-bold">Total Expenses</h2>
         <div className="flex gap-1 items-center">
           <DatePicker value={selectedDate} onChange={setSelectedDate} />
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-10 w-8 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
           </svg>
         </div>
@@ -167,15 +219,26 @@ const TotalExpenses = ({ initialExpenses }) => {
         ))}
       </div>
 
-      <div className="mt-6 w-full flex flex-col md:flex-row gap-2">
-        <div className="relative w-full">
+      {/* Error / Success feedback */}
+      {submitError && (
+        <p className="text-red-400 text-sm mt-3">{submitError}</p>
+      )}
+      {submitSuccess && (
+        <p className="text-green-400 text-sm mt-3">✓ Expense added successfully!</p>
+      )}
+
+      <div className="mt-4 w-full flex flex-col md:flex-row gap-2">
+        <div className="relative w-full" ref={dropdownRef}>
           <input
             type="text"
             placeholder="Field"
             className="w-full bg-gray-800 text-white border-2 border-gray-700 rounded-lg py-2 px-4 focus:outline-none focus:border-green-500"
             value={field}
-            onChange={(e) => setField(e.target.value)}
-            onClick={() => setIsDropdownOpen((o) => !o)}
+            onChange={(e) => {
+      setField(e.target.value);
+      setIsDropdownOpen(true); // ✅ type karte waqt bhi open rahe
+    }}
+    onFocus={() => setIsDropdownOpen(true)}
           />
           {isDropdownOpen && (
             <div className="absolute bottom-full mb-2 w-full bg-gray-800 text-white rounded-md shadow-lg z-10 max-h-40 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
@@ -203,9 +266,14 @@ const TotalExpenses = ({ initialExpenses }) => {
 
       <button
         onClick={handleAddEntry}
-        className="w-full bg-green-500 text-white font-bold py-3 rounded-lg mt-2 hover:bg-green-600 transition-colors"
+        disabled={isSubmitting}
+        className={`w-full text-white font-bold py-3 rounded-lg mt-2 transition-colors
+          ${isSubmitting
+            ? 'bg-green-800 cursor-not-allowed opacity-60'
+            : 'bg-green-500 hover:bg-green-600 cursor-pointer'
+          }`}
       >
-        Add entry
+        {isSubmitting ? 'Adding...' : 'Add entry'}
       </button>
     </div>
   );

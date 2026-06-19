@@ -142,7 +142,7 @@ const Header = () => {
 
           <Box sx={{ display: "flex", alignItems: "center", ml: 2, gap: "10px", position: "relative" }}>
             <Avatar
-              src={import.meta.env.VITE_BASE2 + profilePicture}
+              src={profilePicture}
               alt="User"
               sx={{ width: 44, height: 44, backgroundColor: "#D8D8D8" }}
             />

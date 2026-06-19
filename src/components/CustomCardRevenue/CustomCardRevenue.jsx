@@ -37,7 +37,6 @@ const CustomCardRevenue = ({ title, totalRevenue, description, previousRevenue, 
                     </h2>
                 }
             </h2>
-
             <div
                 className="flex items-center justify-between"
                 style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
