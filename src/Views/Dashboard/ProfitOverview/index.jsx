@@ -46,7 +46,6 @@ const FILTER_TABS = [
   { label: 'All Time',  value: 'all'       },
 ];
 
-// ✅ Fetcher function outside component — SWR calls this with the key
 const createFetcher = (token) => async (url) => {
   const res = await request({ method: 'get', url }, false, token);
   return res?.data;
@@ -57,20 +56,18 @@ const index = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const chartRef = useRef(null);
   const [chartData, setChartData] = useState(lineChartInitialData);
-  
-  // ✅ SWR — key changes with filter → auto re-fetches
-  // SWR caches each filter's data separately, so switching back = instant, no re-fetch
-  const { data: all_data, isLoading, isValidating } = useSWR(
+
+  // ✅ mutate added for refresh button
+  const { data: all_data, isLoading, isValidating, mutate } = useSWR(
     token ? `/dashboard/profitOverview?range=${activeFilter}` : null,
     createFetcher(token),
     {
-      revalidateOnFocus: false,      // don't refetch when user switches browser tabs
-      revalidateOnReconnect: false,  // don't refetch on reconnect
-      dedupingInterval: 5 * 60 * 1000, // cache each filter for 5 minutes
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 5 * 60 * 1000,
     }
   );
 
-  // Show skeleton only on first load of a filter (not background revalidation)
   const isDataLoading = isLoading;
 
   useEffect(() => {
@@ -90,8 +87,6 @@ const index = () => {
   const handleFilterChange = (value) => {
     if (value === activeFilter) return;
     setActiveFilter(value);
-    // ✅ No manual fetch needed — SWR handles it automatically
-    // If this filter was fetched before, it returns cached data instantly
   };
 
   const revenueCardsData = [
@@ -144,20 +139,19 @@ const index = () => {
 
   const total = Doughnutdata.datasets[0].data.reduce((sum, v) => sum + v, 0);
 
-  // ✅ Legend data — API se dynamically banao
-const legendData = all_data?.Doughnutdata
-  ? all_data.Doughnutdata.labels.map((label, i) => ({
-      label,
-      color: all_data.Doughnutdata.datasets[0].backgroundColor[i],
-    }))
-  : [
-      { label: 'Marketing',          color: '#E91E63' },
-      { label: 'Apple Dev Fee',       color: '#FFEB3B' },
-      { label: 'Google Dev Fee',      color: '#2196F3' },
-      { label: 'Ambassador Payouts',  color: '#4CAF50' },
-      { label: 'Server and Tools',    color: '#5710e5' },
-      { label: 'Miscellaneous',       color: '#f112d3' },
-    ];
+  const legendData = all_data?.Doughnutdata
+    ? all_data.Doughnutdata.labels.map((label, i) => ({
+        label,
+        color: all_data.Doughnutdata.datasets[0].backgroundColor[i],
+      }))
+    : [
+        { label: 'Marketing',          color: '#E91E63' },
+        { label: 'Apple Dev Fee',       color: '#FFEB3B' },
+        { label: 'Google Dev Fee',      color: '#2196F3' },
+        { label: 'Ambassador Payouts',  color: '#4CAF50' },
+        { label: 'Server and Tools',    color: '#5710e5' },
+        { label: 'Miscellaneous',       color: '#f112d3' },
+      ];
 
   const pieChartData = [
     { label: 'Gross Revenue ($)', value: Number(all_data?.summary?.grossRevenue) || 0, color: '#e879f9' },
@@ -183,7 +177,6 @@ const legendData = all_data?.Doughnutdata
                   style={{ cursor: 'pointer' }}
                 >
                   {tab.label}
-                  {/* ✅ subtle indicator when background revalidating */}
                   {isValidating && activeFilter === tab.value && (
                     <span style={{ marginLeft: 4, fontSize: 10, opacity: 0.6 }}>↻</span>
                   )}
@@ -286,62 +279,111 @@ const legendData = all_data?.Doughnutdata
           </div>
 
           {/* Charts Row 2 */}
-            {/* Charts Row 2 */}
-<div className='grid grid-cols-1 lg:grid-cols-12 gap-4' style={{ paddingY: "16px", fontFamily: 'Montserrat, sans-serif' }}>
-  <div className='lg:col-span-7'>
-    <Typography sx={{ color: "#FFFF00", fontWeight: "bold", py: "10px", fontSize: "25px", fontFamily: 'Montserrat, sans-serif' }}>
-      Expense Breakdown
-    </Typography>
+          <div className='grid grid-cols-1 lg:grid-cols-12 gap-4' style={{ paddingY: "16px", fontFamily: 'Montserrat, sans-serif' }}>
 
-    {isDataLoading ? <PieChartSkeleton /> : (
-      <div className="flex flex-col lg:flex-row justify-center items-center bg-[#171717] rounded-xl text-white" style={{ height: "400px", marginTop: "10px" }}>
-        <div className="relative w-full h-full" style={{ padding: "16px" }}>
-          <Doughnut
-            // ✅ API ka Doughnutdata use karo
-            data={
-              (all_data?.Doughnutdata?.labels?.length > 0 && all_data?.Doughnutdata?.datasets?.length > 0)
-                ? all_data.Doughnutdata
-                : Doughnutdata
-            }
-            options={{
-              responsive: true, maintainAspectRatio: false, cutout: "80%",
-              layout: { padding: { top: 20, bottom: 40 } },
-              plugins: { legend: { display: false } },
-            }}
-            plugins={[outsideLabelsPlugin]}
-          />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-            <p className="text-xl text-gray-400">Total</p>
-            {/* ✅ expenseBreakdown.total directly use karo */}
-            <p className="text-xl lg:text-4xl font-bold">
-              ${all_data?.expenseBreakdown?.total ?? total}
-            </p>
+            {/* ✅ LEFT — Expense Breakdown with Refresh button */}
+            <div className='lg:col-span-7'>
+
+              {/* Header row: title + refresh button */}
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                py="10px"
+              >
+                <Typography sx={{ color: "#FFFF00", fontWeight: "bold", fontSize: "25px", fontFamily: 'Montserrat, sans-serif' }}>
+                  Expense Breakdown
+                </Typography>
+
+                <button
+                  onClick={() => mutate()}
+                  title="Refresh data"
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #FFFF00',
+                    borderRadius: '8px',
+                    color: '#FFFF00',
+                    padding: '6px 14px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontFamily: 'Montserrat, sans-serif',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'background 0.2s, opacity 0.2s',
+                    opacity: isValidating ? 0.5 : 1,
+                  }}
+                  disabled={isValidating}
+                  onMouseEnter={e => { if (!isValidating) e.currentTarget.style.background = 'rgba(255,255,0,0.1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {/* spinning when revalidating */}
+                  <span style={{
+                    display: 'inline-block',
+                    animation: isValidating ? 'spin 1s linear infinite' : 'none',
+                  }}>↻</span>
+                  {isValidating ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </Box>
+
+              {/* spin keyframe injected once */}
+              <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+
+              {isDataLoading ? <PieChartSkeleton /> : (
+                <div
+                  className="flex flex-col lg:flex-row justify-center items-center bg-[#171717] rounded-xl text-white"
+                  style={{ minHeight: "500px", marginTop: "10px", padding: "24px" }}
+                >
+                  {/* Doughnut */}
+                  <div className="relative w-full flex-1" style={{ minHeight: "420px" }}>
+                    <Doughnut
+                      data={
+                        (all_data?.Doughnutdata?.labels?.length > 0 && all_data?.Doughnutdata?.datasets?.length > 0)
+                          ? all_data.Doughnutdata
+                          : Doughnutdata
+                      }
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: "80%",
+                        layout: { padding: { top: 30, bottom: 50 } },
+                        plugins: { legend: { display: false } },
+                      }}
+                      plugins={[outsideLabelsPlugin]}
+                    />
+                    {/* Center total */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                      <p className="text-xl text-gray-400">Total</p>
+                      <p className="text-xl lg:text-4xl font-bold">
+                        ${all_data?.expenseBreakdown?.total ?? total}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <ul className="list-none text-white lg:p-6 w-full lg:w-auto flex flex-wrap justify-center lg:flex-col lg:justify-start gap-3 mt-4 lg:mt-0">
+                    {legendData.map((item, idx) => (
+                      <li key={idx} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></div>
+                        <span className="text-[13px] whitespace-nowrap">{item.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* RIGHT — Total Expenses */}
+            <div className='lg:col-span-5 mt-4 lg:mt-0 h-full'>
+              <Box display="flex" justifyContent={{ xs: "center", sm: "end" }} alignItems="center" mt={2}></Box>
+              {isDataLoading ? <AgeSegmentsSkeleton /> : (
+                <DashboardCard sx={{ padding: "10px", height: { xs: "full", md: "500px" }, fontFamily: 'Montserrat, sans-serif' }}>
+                  <TotalExpenses initialExpenses={all_data?.expensesList} />
+                </DashboardCard>
+              )}
+            </div>
+
           </div>
-        </div>
-
-        {/* ✅ Legend — API se dynamic */}
-        <ul className="list-none space-y-2 text-white lg:p-4 w-full lg:w-1/3 flex flex-wrap justify-center lg:block">
-          {legendData.map((item, idx) => (
-            <li key={idx} className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }}></div>
-              <span className="text-[12px]">{item.label}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
-  </div>
-
-  <div className='lg:col-span-5 mt-4 lg:mt-0 h-full'>
-    <Box display="flex" justifyContent={{ xs: "center", sm: "end" }} alignItems="center" mt={2}></Box>
-    {isDataLoading ? <AgeSegmentsSkeleton /> : (
-      <DashboardCard sx={{ padding: "10px", height: { xs: "full", md: "500px" }, fontFamily: 'Montserrat, sans-serif' }}>
-        {/* ✅ expensesList TotalExpenses ko pass karo */}
-        <TotalExpenses initialExpenses={all_data?.expensesList} />
-      </DashboardCard>
-    )}
-  </div>
-</div>
         </div>
       </div>
     </>
