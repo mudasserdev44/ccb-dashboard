@@ -105,69 +105,57 @@ const NewUgc = ({ ugc_data, loading, onRefresh }) => {
   const overviewColumns = getOverviewColumns(handleStatusChange, handleRowSelect, selectedRows);
 
   // ===== MAIN FIX: Handle Apply Changes with both single and multiple support =====
-  const handleApplyChanges = async() => {
-    // Get all changed rows
-    const changedRows = data.filter((item, index) => {
-      return item.status !== originalData[index].status;
-    });
+  const handleApplyChanges = async () => {
+  const changedRows = data.filter((item, index) => {
+    return item.status !== originalData[index].status;
+  });
 
-    if (changedRows.length === 0) {
-      alert('No changes to apply');
-      return;
-    }
+  if (changedRows.length === 0) {
+    alert('No changes to apply');
+    return;
+  }
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
 
-    try {
-      // Prepare request data based on number of changes
-      let requestData;
-      let url;
+  try {
+    const requestData = {
+      coupons: changedRows.map((row) => ({
+        couponId: row.id,
+        status: row.status?.toLowerCase()
+      }))
+    };
 
-      if (changedRows.length === 1) {
-        // Single change - send as object
-        const row = changedRows[0];
-        requestData = {
-          couponId: row.id,
-          status: row.status?.toLowerCase()
-        };
-        url = "coupons/admin/approve";
-      } else {
-        // Multiple changes - send as array
-        requestData = changedRows.map(row => ({
-          couponId: row.id,
-          status: row.status?.toLowerCase()
-        }));
-        url = "coupons/admin/approve";
-      }
+    console.log("Sending request:", requestData);
 
-      console.log('Sending request:', { url, data: requestData });
-
-      const res = await request({
+    const res = await request(
+      {
         method: "post",
-        url: url,
+        url: "coupons/admin/approve",
         data: requestData
-      }, false, token);
+      },
+      false,
+      token
+    );
 
-      // Refetch the data after successful API call
-      await mutate('admin/new');
+    await mutate('admin/new');
 
-      // Clear selections after successful update
-      setSelectedRows([]);
-      
-      // Show success message
-      const message = changedRows.length === 1 
-        ? '1 coupon updated successfully!' 
-        : `${changedRows.length} coupons updated successfully!`;
-      alert(message);
-      
-      console.log('Changes applied successfully:', res);
-    } catch(err) {
-      console.error('Error applying changes:', err);
-      alert('Failed to apply changes. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    setSelectedRows([]);
+
+    alert(
+      changedRows.length === 1
+        ? "1 coupon updated successfully!"
+        : `${changedRows.length} coupons updated successfully!`
+    );
+
+    console.log("Success:", res);
+
+  } catch (err) {
+    console.error("Error applying changes:", err);
+    alert("Failed to apply changes. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleCancel = () => {
     // Reset data to original state

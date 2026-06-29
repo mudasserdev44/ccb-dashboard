@@ -18,7 +18,8 @@ const LoginScreen = () => {
     if (email && email.includes('@')) {
       setIsLoading(true);
       const body = {
-        phoneOrEmail: email
+        phoneOrEmail: email,
+        source: "dashboard"
       }
       try {
         const res = await request({

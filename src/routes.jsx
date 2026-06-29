@@ -19,8 +19,8 @@ import NotFound from "./components/NotFound";
 import EditFutureOpportunity from "./Views/Dashboard/FutureOpportunities/EditFutureOpportunity";
 
 export default function Router() {
-  // const isAuthenticated = useSelector((state) => state.admin.isAuthenticated)
-  const isAuthenticated = true
+  const isAuthenticated = useSelector((state) => state.admin.isAuthenticated)
+  // const isAuthenticated = true
   let element = useRoutes([
     {
       path: "/",
